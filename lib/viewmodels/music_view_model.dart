@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:rawang_melodies/data/remote/api_service.dart';
 import 'package:rawang_melodies/data/local/database_helper.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
 import 'package:rawang_melodies/player/audio_player_engine.dart';
@@ -12,6 +13,7 @@ class MusicViewModel extends ChangeNotifier {
   AppTab currentTab = AppTab.home;
   String searchQuery = "";
   String selectedOwnerFilter = "ALL";
+  String? selectedOwnerName; // when set, filter by exact owner name
   AlbumEntity? selectedAlbum;
   PlaylistEntity? selectedPlaylist;
   bool isAddSongDialogOpen = false;
@@ -28,15 +30,22 @@ class MusicViewModel extends ChangeNotifier {
   List<AlbumEntity> get filteredAlbums {
     final query = searchQuery.trim().toLowerCase();
     return albums.where((album) {
-      final matchesOwner = selectedOwnerFilter == "ALL" ||
-          (selectedOwnerFilter == "SINGER" && album.ownerType == OwnerType.singer.name) ||
-          (selectedOwnerFilter == "ORGANIZATION" && album.ownerType == OwnerType.organization.name) ||
-          (selectedOwnerFilter == "ANONYMOUS" && album.ownerType == OwnerType.anonymous.name);
-      
+      // If a specific owner name is set, filter by exact name only
+      bool matchesOwner;
+      if (selectedOwnerName != null && selectedOwnerName!.isNotEmpty) {
+        matchesOwner = album.ownerName == selectedOwnerName;
+      } else {
+        matchesOwner = selectedOwnerFilter == "ALL" ||
+            (selectedOwnerFilter == "SINGER" && album.ownerType == OwnerType.singer.name) ||
+            (selectedOwnerFilter == "ORGANIZATION" && album.ownerType == OwnerType.organization.name) ||
+            (selectedOwnerFilter == "ANONYMOUS" && album.ownerType == OwnerType.anonymous.name) ||
+            album.ownerType == selectedOwnerFilter;
+      }
+
       final matchesSearch = query.isEmpty ||
           album.title.toLowerCase().contains(query) ||
           album.ownerName.toLowerCase().contains(query);
-          
+
       return matchesOwner && matchesSearch;
     }).toList();
   }
@@ -56,6 +65,7 @@ class MusicViewModel extends ChangeNotifier {
   }
 
   Future<void> _loadData() async {
+    await db.syncFromApi();
     albums = await db.getAllAlbums();
     tracks = await db.getAllTracks();
     downloadedTracks = await db.getDownloadedTracks();
@@ -81,6 +91,13 @@ class MusicViewModel extends ChangeNotifier {
 
   void setOwnerFilter(String filter) {
     selectedOwnerFilter = filter;
+    selectedOwnerName = null; // clear name filter when using type filter
+    notifyListeners();
+  }
+
+  void setOwnerNameFilter(String ownerName) {
+    selectedOwnerName = ownerName;
+    selectedOwnerFilter = "ALL"; // clear type filter when filtering by name
     notifyListeners();
   }
 
@@ -140,12 +157,14 @@ class MusicViewModel extends ChangeNotifier {
       name: name,
       description: description,
     );
+    await ApiService.createPlaylist(newPlaylist);
     await db.insertPlaylist(newPlaylist);
     setCreatePlaylistDialogOpen(false);
     await _loadData();
   }
 
   Future<void> addTrackToPlaylist(String playlistId, String trackId) async {
+    await ApiService.addTrackToPlaylist(playlistId, trackId);
     await db.insertPlaylistTrack(playlistId, trackId);
     setTrackToAddToPlaylist(null);
     if (selectedPlaylist?.id == playlistId) {
@@ -155,6 +174,7 @@ class MusicViewModel extends ChangeNotifier {
   }
 
   Future<void> removeTrackFromPlaylist(String playlistId, String trackId) async {
+    await ApiService.removeTrackFromPlaylist(playlistId, trackId);
     await db.deletePlaylistTrack(playlistId, trackId);
     if (selectedPlaylist?.id == playlistId) {
       selectedPlaylistTracks = await db.getTracksForPlaylist(playlistId);
@@ -207,8 +227,10 @@ class MusicViewModel extends ChangeNotifier {
       karaokeAudioUrl: hasKaraoke ? "synth:karaoke:440:600" : null,
     );
 
+    await ApiService.createAlbum(newAlbum);
+    await ApiService.createTrack(newTrack);
+    await db.insertAlbum(newAlbum);
     await db.insertTrack(newTrack);
-    // Note: Add insertAlbum to db helper if needed, we'll skip for now or we can implement it
     setAddSongDialogOpen(false);
     await _loadData();
   }

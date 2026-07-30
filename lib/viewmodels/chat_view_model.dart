@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:rawang_melodies/data/remote/api_service.dart';
 import 'package:rawang_melodies/data/local/database_helper.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
 
@@ -12,6 +13,7 @@ class ChatViewModel extends ChangeNotifier {
   }
 
   Future<void> _loadMessages() async {
+    await db.syncFromApi();
     messages = await db.getAllMessages();
     notifyListeners();
   }
@@ -33,6 +35,7 @@ class ChatViewModel extends ChangeNotifier {
       isUser: true,
     );
 
+    await ApiService.createChatMessage(newMessage);
     await db.insertMessage(newMessage);
     await _loadMessages();
   }

@@ -121,7 +121,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () => onFilterByOwner(OwnerType.singer.name),
+                  onTap: () => onFilterByOwner("ALL"),
                   child: Text(
                     "See All",
                     style: TextStyle(
@@ -238,26 +238,25 @@ class HomeScreen extends StatelessWidget {
   List<Widget> _buildOwnerAvatars(BuildContext context, List<AlbumEntity> albums) {
     final theme = Theme.of(context);
 
-    // Hardcoded dummy avatars (7 singers, 3 organizations)
-    final owners = <_OwnerInfo>[
-      _OwnerInfo(name: "Ah Dang Rawang", type: OwnerType.singer.name, filterKey: OwnerType.singer.name, imageUrl: "https://randomuser.me/api/portraits/men/32.jpg"),
-      _OwnerInfo(name: "Seng Rawang", type: OwnerType.singer.name, filterKey: OwnerType.singer.name, imageUrl: "https://randomuser.me/api/portraits/women/44.jpg"),
-      _OwnerInfo(name: "John Singer", type: OwnerType.singer.name, filterKey: OwnerType.singer.name, imageUrl: "https://randomuser.me/api/portraits/men/68.jpg"),
-      _OwnerInfo(name: "Maria Artist", type: OwnerType.singer.name, filterKey: OwnerType.singer.name, imageUrl: "https://randomuser.me/api/portraits/women/65.jpg"),
-      _OwnerInfo(name: "David Vocals", type: OwnerType.singer.name, filterKey: OwnerType.singer.name, imageUrl: "https://randomuser.me/api/portraits/men/22.jpg"),
-      _OwnerInfo(name: "Sarah Melody", type: OwnerType.singer.name, filterKey: OwnerType.singer.name, imageUrl: "https://randomuser.me/api/portraits/women/11.jpg"),
-      _OwnerInfo(name: "Peter Tune", type: OwnerType.singer.name, filterKey: OwnerType.singer.name, imageUrl: "https://randomuser.me/api/portraits/men/90.jpg"),
-      
-      _OwnerInfo(name: "Rawang Literature & Culture", type: OwnerType.organization.name, filterKey: OwnerType.organization.name, imageUrl: "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=150&h=150&fit=crop"),
-      _OwnerInfo(name: "Rawang Youth Heritage", type: OwnerType.organization.name, filterKey: OwnerType.organization.name, imageUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=150&h=150&fit=crop"),
-      _OwnerInfo(name: "Traditional Arts Org", type: OwnerType.organization.name, filterKey: OwnerType.organization.name, imageUrl: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=150&h=150&fit=crop"),
-    ];
+    // Dynamically extract unique owners from the fetched albums
+    final Map<String, _OwnerInfo> ownerMap = {};
+    for (final album in albums) {
+      if (!ownerMap.containsKey(album.ownerName)) {
+        ownerMap[album.ownerName] = _OwnerInfo(
+          name: album.ownerName,
+          type: album.ownerType,
+          filterKey: album.ownerType,
+          imageUrl: '', // No specific avatar URL in the database currently
+        );
+      }
+    }
+    final owners = ownerMap.values.toList();
 
     return owners.map((owner) {
       return Padding(
         padding: const EdgeInsets.only(right: 16),
         child: GestureDetector(
-          onTap: () => onFilterByOwner(owner.filterKey),
+          onTap: () => onFilterByOwner(owner.name),
           child: SizedBox(
             width: 72,
             child: Column(
@@ -277,67 +276,38 @@ class HomeScreen extends StatelessWidget {
                     ],
                   ),
                   child: ClipOval(
-                    child: Image.network(
-                      owner.imageUrl,
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, progress) {
-                        if (progress == null) return child;
-                        return Container(
+                    child: owner.imageUrl.isEmpty 
+                      ? _buildInitials(theme, owner)
+                      : Image.network(
+                          owner.imageUrl,
                           width: 60,
                           height: 60,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              colors: [
-                                theme.colorScheme.primary.withValues(alpha: 0.3),
-                                theme.colorScheme.secondary.withValues(alpha: 0.3),
-                              ],
-                            ),
-                          ),
-                          child: const Center(
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stack) {
-                        final initials = owner.name
-                            .trim()
-                            .split(' ')
-                            .take(2)
-                            .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '')
-                            .join();
-                        return Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              colors: owner.type == OwnerType.singer.name
-                                  ? [theme.colorScheme.primary, theme.colorScheme.tertiary]
-                                  : [theme.colorScheme.secondary, theme.colorScheme.primary],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              initials,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  colors: [
+                                    theme.colorScheme.primary.withValues(alpha: 0.3),
+                                    theme.colorScheme.secondary.withValues(alpha: 0.3),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stack) => _buildInitials(theme, owner),
+                        ),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -358,6 +328,39 @@ class HomeScreen extends StatelessWidget {
         ),
       );
     }).toList();
+  }
+
+  Widget _buildInitials(ThemeData theme, _OwnerInfo owner) {
+    final initials = owner.name
+        .trim()
+        .split(' ')
+        .take(2)
+        .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '')
+        .join();
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: owner.type == OwnerType.singer.name
+              ? [theme.colorScheme.primary, theme.colorScheme.tertiary]
+              : [theme.colorScheme.secondary, theme.colorScheme.primary],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: Text(
+          initials,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+      ),
+    );
   }
 }
 

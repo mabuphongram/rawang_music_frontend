@@ -152,7 +152,11 @@ class MainScreen extends StatelessWidget {
             );
           },
           onFilterByOwner: (filter) {
-            viewModel.setOwnerFilter(filter);
+            if (filter == "ALL") {
+              viewModel.setOwnerFilter("ALL");
+            } else {
+              viewModel.setOwnerNameFilter(filter);
+            }
             viewModel.selectTab(AppTab.albums);
           },
         );

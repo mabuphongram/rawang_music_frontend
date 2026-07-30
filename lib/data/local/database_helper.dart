@@ -3,6 +3,7 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
 import 'package:rawang_melodies/data/local/preloaded_data.dart';
+import 'package:rawang_melodies/data/remote/api_service.dart';
 
 class DatabaseHelper {
   static const _databaseName = "rawang_database.db";
@@ -106,21 +107,62 @@ class DatabaseHelper {
       )
     ''');
 
-    // Insert preloaded data
-    Batch batch = db.batch();
-    for (var album in PreloadedData.initialAlbums) {
-      batch.insert('albums', album.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+    // Initial empty state, will sync from API
+    // batch.commit(noResult: true);
+  }
+
+  bool _hasSynced = false;
+
+  Future<void> syncFromApi() async {
+    if (_hasSynced) return;
+    try {
+      final apiAlbums = await ApiService.fetchAlbums();
+      final apiTracks = await ApiService.fetchTracks();
+      final apiPlaylists = await ApiService.fetchPlaylists();
+      final apiMessages = await ApiService.fetchChatMessages();
+
+      final db = await database;
+      Batch batch = db.batch();
+
+      // Clear existing records to keep in sync (optional, or just replace)
+      // Note: we should preserve downloaded and favorite status from tracks, so we use replace 
+      // but maybe preserve existing tracks' favorite/downloaded status.
+      // Easiest is just to replace albums, playlists, messages.
+      for (var album in apiAlbums) {
+        batch.insert('albums', album.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      for (var playlist in apiPlaylists) {
+        batch.insert('playlists', playlist.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      for (var msg in apiMessages) {
+        batch.insert('chat_messages', msg.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      
+      await batch.commit(noResult: true);
+
+      // For tracks, carefully merge to not lose downloaded/favorite status
+      final existingTracks = await getAllTracks();
+      final Map<String, TrackEntity> existingTrackMap = { for (var t in existingTracks) t.id: t };
+      
+      Batch trackBatch = db.batch();
+      for (var track in apiTracks) {
+        var newTrack = track;
+        if (existingTrackMap.containsKey(track.id)) {
+          final existing = existingTrackMap[track.id]!;
+          newTrack = newTrack.copyWith(
+            isDownloaded: existing.isDownloaded,
+            isFavorite: existing.isFavorite,
+            playCount: existing.playCount
+          );
+        }
+        trackBatch.insert('tracks', newTrack.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      await trackBatch.commit(noResult: true);
+
+      _hasSynced = true;
+    } catch (e) {
+      print('Failed to sync from API: \$e');
     }
-    for (var track in PreloadedData.initialTracks) {
-      batch.insert('tracks', track.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
-    }
-    for (var playlist in PreloadedData.initialPlaylists) {
-      batch.insert('playlists', playlist.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
-    }
-    for (var msg in PreloadedData.initialChatMessages) {
-      batch.insert('chat_messages', msg.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
-    }
-    await batch.commit(noResult: true);
   }
 
   // DAO equivalents
@@ -209,5 +251,10 @@ class DatabaseHelper {
   Future<void> insertTrack(TrackEntity track) async {
     final db = await database;
     await db.insert('tracks', track.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<void> insertAlbum(AlbumEntity album) async {
+    final db = await database;
+    await db.insert('albums', album.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
   }
 }
