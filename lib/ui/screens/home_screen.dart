@@ -52,7 +52,7 @@ class HomeScreen extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -66,7 +66,7 @@ class HomeScreen extends StatelessWidget {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    theme.colorScheme.background.withOpacity(0.9),
+                    theme.colorScheme.surface.withValues(alpha: 0.9),
                   ],
                 ),
               ),
@@ -90,14 +90,14 @@ class HomeScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onBackground,
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                   Text(
                     "Stream, download offline, and discover traditional songs.",
                     style: TextStyle(
                       fontSize: 12,
-                      color: theme.colorScheme.onBackground.withOpacity(0.8),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                     ),
                   ),
                 ],
@@ -105,18 +105,61 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
 
-          // Quick Owner Categories
+
+          // Browse by Owner – avatar row
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Explore Collections",
+                  "Browse by Owner",
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onBackground,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => onFilterByOwner(OwnerType.singer.name),
+                  child: Text(
+                    "See All",
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          SizedBox(
+            height: 100,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: _buildOwnerAvatars(context, albums),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+
+          // Featured Albums Carousel
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Featured Albums",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
                 ElevatedButton.icon(
@@ -134,45 +177,13 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                _buildFilterChip(context, "All Albums", "ALL", true, null),
-                const SizedBox(width: 8),
-                _buildFilterChip(context, "Singers", OwnerType.singer.name, false, Icons.mic),
-                const SizedBox(width: 8),
-                _buildFilterChip(context, "Organizations", OwnerType.organization.name, false, Icons.corporate_fare),
-                const SizedBox(width: 8),
-                _buildFilterChip(context, "Title Collections", OwnerType.anonymous.name, false, Icons.music_note),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 20),
-
-          // Featured Albums Carousel
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              "Featured Albums",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onBackground,
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
           SizedBox(
             height: 230,
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               scrollDirection: Axis.horizontal,
               itemCount: albums.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              separatorBuilder: (_, index) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
                 final album = albums[index];
                 return AlbumCard(
@@ -194,7 +205,7 @@ class HomeScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onBackground,
+                color: theme.colorScheme.onSurface,
               ),
             ),
           ),
@@ -205,7 +216,7 @@ class HomeScreen extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             shrinkWrap: true,
             itemCount: tracks.take(6).length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            separatorBuilder: (_, index) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
               final track = tracks[index];
               return TrackListItem(
@@ -224,21 +235,136 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFilterChip(BuildContext context, String label, String filter, bool selected, IconData? icon) {
-    return ChoiceChip(
-      label: Row(
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 16),
-            const SizedBox(width: 4),
-          ],
-          Text(label),
-        ],
-      ),
-      selected: selected,
-      onSelected: (_) {
-        onFilterByOwner(filter);
-      },
-    );
+  List<Widget> _buildOwnerAvatars(BuildContext context, List<AlbumEntity> albums) {
+    final theme = Theme.of(context);
+
+    // Hardcoded dummy avatars (7 singers, 3 organizations)
+    final owners = <_OwnerInfo>[
+      _OwnerInfo(name: "Ah Dang Rawang", type: OwnerType.singer.name, filterKey: OwnerType.singer.name, imageUrl: "https://randomuser.me/api/portraits/men/32.jpg"),
+      _OwnerInfo(name: "Seng Rawang", type: OwnerType.singer.name, filterKey: OwnerType.singer.name, imageUrl: "https://randomuser.me/api/portraits/women/44.jpg"),
+      _OwnerInfo(name: "John Singer", type: OwnerType.singer.name, filterKey: OwnerType.singer.name, imageUrl: "https://randomuser.me/api/portraits/men/68.jpg"),
+      _OwnerInfo(name: "Maria Artist", type: OwnerType.singer.name, filterKey: OwnerType.singer.name, imageUrl: "https://randomuser.me/api/portraits/women/65.jpg"),
+      _OwnerInfo(name: "David Vocals", type: OwnerType.singer.name, filterKey: OwnerType.singer.name, imageUrl: "https://randomuser.me/api/portraits/men/22.jpg"),
+      _OwnerInfo(name: "Sarah Melody", type: OwnerType.singer.name, filterKey: OwnerType.singer.name, imageUrl: "https://randomuser.me/api/portraits/women/11.jpg"),
+      _OwnerInfo(name: "Peter Tune", type: OwnerType.singer.name, filterKey: OwnerType.singer.name, imageUrl: "https://randomuser.me/api/portraits/men/90.jpg"),
+      
+      _OwnerInfo(name: "Rawang Literature & Culture", type: OwnerType.organization.name, filterKey: OwnerType.organization.name, imageUrl: "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=150&h=150&fit=crop"),
+      _OwnerInfo(name: "Rawang Youth Heritage", type: OwnerType.organization.name, filterKey: OwnerType.organization.name, imageUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=150&h=150&fit=crop"),
+      _OwnerInfo(name: "Traditional Arts Org", type: OwnerType.organization.name, filterKey: OwnerType.organization.name, imageUrl: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=150&h=150&fit=crop"),
+    ];
+
+    return owners.map((owner) {
+      return Padding(
+        padding: const EdgeInsets.only(right: 16),
+        child: GestureDetector(
+          onTap: () => onFilterByOwner(owner.filterKey),
+          child: SizedBox(
+            width: 72,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: Image.network(
+                      owner.imageUrl,
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, progress) {
+                        if (progress == null) return child;
+                        return Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [
+                                theme.colorScheme.primary.withValues(alpha: 0.3),
+                                theme.colorScheme.secondary.withValues(alpha: 0.3),
+                              ],
+                            ),
+                          ),
+                          child: const Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stack) {
+                        final initials = owner.name
+                            .trim()
+                            .split(' ')
+                            .take(2)
+                            .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '')
+                            .join();
+                        return Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: owner.type == OwnerType.singer.name
+                                  ? [theme.colorScheme.primary, theme.colorScheme.tertiary]
+                                  : [theme.colorScheme.secondary, theme.colorScheme.primary],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              initials,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  owner.name,
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }).toList();
   }
+}
+
+class _OwnerInfo {
+  final String name;
+  final String type;
+  final String filterKey;
+  final String imageUrl;
+  const _OwnerInfo({required this.name, required this.type, required this.filterKey, required this.imageUrl});
 }

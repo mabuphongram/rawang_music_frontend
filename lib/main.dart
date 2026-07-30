@@ -32,7 +32,7 @@ void main() {
 }
 
 class RawangMusicApp extends StatelessWidget {
-  const RawangMusicApp({super.key});
+  const RawangMusicApp({super.key}); 
 
   @override
   Widget build(BuildContext context) {

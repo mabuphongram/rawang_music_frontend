@@ -6,7 +6,7 @@ import 'package:rawang_melodies/data/local/preloaded_data.dart';
 
 class DatabaseHelper {
   static const _databaseName = "rawang_database.db";
-  static const _databaseVersion = 1;
+  static const _databaseVersion = 2;
 
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
@@ -26,7 +26,19 @@ class DatabaseHelper {
       path,
       version: _databaseVersion,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute("DROP TABLE IF EXISTS albums");
+      await db.execute("DROP TABLE IF EXISTS tracks");
+      await db.execute("DROP TABLE IF EXISTS playlists");
+      await db.execute("DROP TABLE IF EXISTS playlist_tracks");
+      await db.execute("DROP TABLE IF EXISTS chat_messages");
+      await _onCreate(db, newVersion);
+    }
   }
 
   Future _onCreate(Database db, int version) async {
