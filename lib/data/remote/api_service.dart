@@ -4,8 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:rawang_melodies/data/local/entity/entities.dart';
 
 class ApiService {
-  // Local IP so physical Android device can reach the dev server over Wi-Fi
-  static const String baseUrl = 'http://79.143.177.76:5000/api';
+  static String get baseUrl => dotenv.env['API_BASE_URL'] ?? 'http://192.168.90.31:5000/api';
 
   // ─────────────────────────────────────────────
   // URL resolver — prepends MINIO_PREFIX and URL-encodes the result.
