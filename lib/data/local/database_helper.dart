@@ -2,12 +2,11 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
-import 'package:rawang_melodies/data/local/preloaded_data.dart';
 import 'package:rawang_melodies/data/remote/api_service.dart';
 
 class DatabaseHelper {
   static const _databaseName = "rawang_database.db";
-  static const _databaseVersion = 2;
+  static const _databaseVersion = 3;
 
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
@@ -32,7 +31,7 @@ class DatabaseHelper {
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
+    if (oldVersion < newVersion) {
       await db.execute("DROP TABLE IF EXISTS albums");
       await db.execute("DROP TABLE IF EXISTS tracks");
       await db.execute("DROP TABLE IF EXISTS playlists");
@@ -49,7 +48,7 @@ class DatabaseHelper {
         title TEXT,
         ownerType TEXT,
         ownerName TEXT,
-        coverResName TEXT,
+        coverImage TEXT,
         releaseYear INTEGER,
         description TEXT,
         trackCount INTEGER

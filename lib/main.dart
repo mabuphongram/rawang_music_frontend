@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:rawang_melodies/player/audio_player_engine.dart';
 import 'package:rawang_melodies/ui/components/dialogs.dart';
@@ -14,8 +15,9 @@ import 'package:rawang_melodies/ui/theme.dart';
 import 'package:rawang_melodies/viewmodels/chat_view_model.dart';
 import 'package:rawang_melodies/viewmodels/music_view_model.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
   runApp(
     MultiProvider(
       providers: [
@@ -130,6 +132,7 @@ class MainScreen extends StatelessWidget {
         return HomeScreen(
           albums: viewModel.albums,
           tracks: viewModel.tracks,
+          owners: viewModel.owners,
           currentPlayingTrackId: viewModel.playerEngine.playerState.currentTrack?.id,
           onSelectAlbum: viewModel.selectAlbum,
           onPlayTrack: (track, ctx) => viewModel.playTrack(track, playlistContext: ctx),

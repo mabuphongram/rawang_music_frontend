@@ -4,12 +4,38 @@ enum OwnerType {
   anonymous
 }
 
+class OwnerEntity {
+  final String id;
+  final String name;
+  final String avatarUrl; // relative path stored in MongoDB, resolved at runtime
+  final String description;
+  final String ownerType; // 'singer' or 'organization'
+
+  OwnerEntity({
+    required this.id,
+    required this.name,
+    required this.avatarUrl,
+    required this.description,
+    required this.ownerType,
+  });
+
+  factory OwnerEntity.fromMap(Map<String, dynamic> map, {required String ownerType}) {
+    return OwnerEntity(
+      id: map['id'] ?? '',
+      name: map['name'] ?? '',
+      avatarUrl: map['avatarUrl'] ?? '',
+      description: map['description'] ?? '',
+      ownerType: ownerType,
+    );
+  }
+}
+
 class AlbumEntity {
   final String id;
   final String title;
   final String ownerType;
   final String ownerName;
-  final String coverResName;
+  final String coverImage; // relative Minio path, e.g. albums/abc/cover.png
   final int releaseYear;
   final String description;
   final int trackCount;
@@ -19,7 +45,7 @@ class AlbumEntity {
     required this.title,
     required this.ownerType,
     required this.ownerName,
-    required this.coverResName,
+    required this.coverImage,
     required this.releaseYear,
     required this.description,
     required this.trackCount,
@@ -31,7 +57,7 @@ class AlbumEntity {
       title: map['title'],
       ownerType: map['ownerType'],
       ownerName: map['ownerName'],
-      coverResName: map['coverResName'],
+      coverImage: map['coverImage'] ?? map['coverResName'] ?? '',
       releaseYear: map['releaseYear'],
       description: map['description'],
       trackCount: map['trackCount'],
@@ -44,7 +70,7 @@ class AlbumEntity {
       'title': title,
       'ownerType': ownerType,
       'ownerName': ownerName,
-      'coverResName': coverResName,
+      'coverImage': coverImage,
       'releaseYear': releaseYear,
       'description': description,
       'trackCount': trackCount,

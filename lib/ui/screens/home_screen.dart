@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
+import 'package:rawang_melodies/data/remote/api_service.dart';
 import 'package:rawang_melodies/ui/components/album_card.dart';
 import 'package:rawang_melodies/ui/components/track_list_item.dart';
 
 class HomeScreen extends StatelessWidget {
   final List<AlbumEntity> albums;
   final List<TrackEntity> tracks;
+  final List<OwnerEntity> owners;
   final String? currentPlayingTrackId;
   final void Function(AlbumEntity) onSelectAlbum;
   final void Function(TrackEntity, List<TrackEntity>) onPlayTrack;
@@ -20,6 +22,7 @@ class HomeScreen extends StatelessWidget {
     super.key,
     required this.albums,
     required this.tracks,
+    required this.owners,
     this.currentPlayingTrackId,
     required this.onSelectAlbum,
     required this.onPlayTrack,
@@ -138,11 +141,13 @@ class HomeScreen extends StatelessWidget {
 
           SizedBox(
             height: 100,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: _buildOwnerAvatars(context, albums),
-            ),
+            child: owners.isEmpty
+                ? const Center(child: Text('Loading owners...', style: TextStyle(fontSize: 12)))
+                : ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    children: _buildOwnerAvatars(context),
+                  ),
           ),
 
           const SizedBox(height: 20),
@@ -235,24 +240,11 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildOwnerAvatars(BuildContext context, List<AlbumEntity> albums) {
+  List<Widget> _buildOwnerAvatars(BuildContext context) {
     final theme = Theme.of(context);
-
-    // Dynamically extract unique owners from the fetched albums
-    final Map<String, _OwnerInfo> ownerMap = {};
-    for (final album in albums) {
-      if (!ownerMap.containsKey(album.ownerName)) {
-        ownerMap[album.ownerName] = _OwnerInfo(
-          name: album.ownerName,
-          type: album.ownerType,
-          filterKey: album.ownerType,
-          imageUrl: '', // No specific avatar URL in the database currently
-        );
-      }
-    }
-    final owners = ownerMap.values.toList();
-
     return owners.map((owner) {
+      final avatarUrl = ApiService.resolveMediaUrl(owner.avatarUrl);
+      final isSinger = owner.ownerType == OwnerType.singer.name;
       return Padding(
         padding: const EdgeInsets.only(right: 16),
         child: GestureDetector(
@@ -276,38 +268,20 @@ class HomeScreen extends StatelessWidget {
                     ],
                   ),
                   child: ClipOval(
-                    child: owner.imageUrl.isEmpty 
-                      ? _buildInitials(theme, owner)
-                      : Image.network(
-                          owner.imageUrl,
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, progress) {
-                            if (progress == null) return child;
-                            return Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: LinearGradient(
-                                  colors: [
-                                    theme.colorScheme.primary.withValues(alpha: 0.3),
-                                    theme.colorScheme.secondary.withValues(alpha: 0.3),
-                                  ],
-                                ),
-                              ),
-                              child: const Center(
-                                child: SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                              ),
-                            );
-                          },
-                          errorBuilder: (context, error, stack) => _buildInitials(theme, owner),
-                        ),
+                    child: avatarUrl.isEmpty
+                        ? _buildInitials(theme, owner.name, isSinger)
+                        : Image.network(
+                            avatarUrl,
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, progress) {
+                              if (progress == null) return child;
+                              return _buildLoadingCircle(theme);
+                            },
+                            errorBuilder: (context, error, stack) =>
+                                _buildInitials(theme, owner.name, isSinger),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -330,8 +304,8 @@ class HomeScreen extends StatelessWidget {
     }).toList();
   }
 
-  Widget _buildInitials(ThemeData theme, _OwnerInfo owner) {
-    final initials = owner.name
+  Widget _buildInitials(ThemeData theme, String name, bool isSinger) {
+    final initials = name
         .trim()
         .split(' ')
         .take(2)
@@ -343,7 +317,7 @@ class HomeScreen extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(
-          colors: owner.type == OwnerType.singer.name
+          colors: isSinger
               ? [theme.colorScheme.primary, theme.colorScheme.tertiary]
               : [theme.colorScheme.secondary, theme.colorScheme.primary],
           begin: Alignment.topLeft,
@@ -362,12 +336,27 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-}
 
-class _OwnerInfo {
-  final String name;
-  final String type;
-  final String filterKey;
-  final String imageUrl;
-  const _OwnerInfo({required this.name, required this.type, required this.filterKey, required this.imageUrl});
+  Widget _buildLoadingCircle(ThemeData theme) {
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary.withValues(alpha: 0.3),
+            theme.colorScheme.secondary.withValues(alpha: 0.3),
+          ],
+        ),
+      ),
+      child: const Center(
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+    );
+  }
 }

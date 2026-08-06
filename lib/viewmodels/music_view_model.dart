@@ -23,6 +23,7 @@ class MusicViewModel extends ChangeNotifier {
 
   List<AlbumEntity> albums = [];
   List<TrackEntity> tracks = [];
+  List<OwnerEntity> owners = [];
   List<TrackEntity> downloadedTracks = [];
   List<TrackEntity> favoriteTracks = [];
   List<PlaylistEntity> playlists = [];
@@ -68,6 +69,7 @@ class MusicViewModel extends ChangeNotifier {
     await db.syncFromApi();
     albums = await db.getAllAlbums();
     tracks = await db.getAllTracks();
+    owners = await ApiService.fetchOwners();
     downloadedTracks = await db.getDownloadedTracks();
     favoriteTracks = await db.getFavoriteTracks();
     playlists = await db.getAllPlaylists();
@@ -204,7 +206,7 @@ class MusicViewModel extends ChangeNotifier {
       title: albumTitle.isEmpty ? "\$title Single" : albumTitle,
       ownerType: ownerType.name,
       ownerName: artistName.isEmpty ? "Community Contributor" : artistName,
-      coverResName: "img_rawang_hero_1785383680261",
+      coverImage: '',
       releaseYear: 2026,
       description: "Preserved community contribution",
       trackCount: 1,

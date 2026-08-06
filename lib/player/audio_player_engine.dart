@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
+import 'package:rawang_melodies/data/remote/api_service.dart';
 
 class PlayerStateData {
   final TrackEntity? currentTrack;
@@ -76,6 +77,13 @@ class AudioPlayerEngine extends ChangeNotifier {
         if (state.processingState == ProcessingState.completed) {
           _onPlaybackFinished();
         }
+      }
+    });
+
+    // Update durationSec whenever just_audio resolves the stream duration
+    _audioPlayer.durationStream.listen((duration) {
+      if (!_isSynthPlaying && duration != null) {
+        _updateState(_playerState.copyWith(durationSec: duration.inSeconds));
       }
     });
   }
@@ -196,19 +204,26 @@ class AudioPlayerEngine extends ChangeNotifier {
   }
 
   void _startAudioPlayback(TrackEntity track) async {
-    final url = _playerState.isKaraokeMode && track.karaokeAudioUrl != null 
-        ? track.karaokeAudioUrl! 
+    final rawUrl = _playerState.isKaraokeMode && track.karaokeAudioUrl != null
+        ? track.karaokeAudioUrl!
         : track.audioUrl;
 
-    if (url.startsWith("http://") || url.startsWith("https://")) {
+    // Resolve relative Minio path → full encoded URL
+    final url = ApiService.resolveMediaUrl(rawUrl);
+
+    if (url.startsWith('http://') || url.startsWith('https://')) {
       _isSynthPlaying = false;
       try {
-        await _audioPlayer.setUrl(url);
+        final duration = await _audioPlayer.setUrl(url);
+        // Capture real duration from the stream header
+        if (duration != null) {
+          _updateState(_playerState.copyWith(durationSec: duration.inSeconds));
+        }
         if (_playerState.isPlaying) {
           _audioPlayer.play();
         }
       } catch (e) {
-        print("Error playing URL: \$e");
+        print('Error playing URL: $e');
         _playAcousticBambooTone(track);
       }
     } else {

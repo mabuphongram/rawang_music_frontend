@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
+import 'package:rawang_melodies/data/remote/api_service.dart';
 
 class OwnerChip extends StatelessWidget {
   final String ownerTypeString;
@@ -89,16 +90,36 @@ class AlbumCard extends StatelessWidget {
                 aspectRatio: 1,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.asset(
-                    'assets/images/${album.coverResName}.jpg',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
+                  child: Builder(builder: (context) {
+                    final imageUrl = ApiService.resolveMediaUrl(album.coverImage);
+                    if (imageUrl.isEmpty) {
                       return Container(
-                        color: Colors.grey,
-                        child: const Center(child: Icon(Icons.album)),
+                        color: Colors.grey.shade800,
+                        child: const Center(
+                          child: Icon(Icons.album, size: 40, color: Colors.white54),
+                        ),
                       );
-                    },
-                  ),
+                    }
+                    return Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, progress) {
+                        if (progress == null) return child;
+                        return Container(
+                          color: Colors.grey.shade800,
+                          child: const Center(child: CircularProgressIndicator()),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey.shade800,
+                          child: const Center(
+                            child: Icon(Icons.album, size: 40, color: Colors.white54),
+                          ),
+                        );
+                      },
+                    );
+                  }),
                 ),
               ),
               const SizedBox(height: 8),
