@@ -6,7 +6,7 @@ import 'package:rawang_melodies/data/remote/api_service.dart';
 
 class DatabaseHelper {
   static const _databaseName = "rawang_database.db";
-  static const _databaseVersion = 3;
+  static const _databaseVersion = 4;
 
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
@@ -106,29 +106,42 @@ class DatabaseHelper {
       )
     ''');
 
+    await db.execute('''
+      CREATE TABLE owners (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        avatarUrl TEXT,
+        description TEXT,
+        ownerType TEXT
+      )
+    ''');
+
     // Initial empty state, will sync from API
     // batch.commit(noResult: true);
   }
 
-  bool _hasSynced = false;
-
   Future<void> syncFromApi() async {
-    if (_hasSynced) return;
     try {
       final apiAlbums = await ApiService.fetchAlbums();
       final apiTracks = await ApiService.fetchTracks();
       final apiPlaylists = await ApiService.fetchPlaylists();
       final apiMessages = await ApiService.fetchChatMessages();
+      final apiOwners = await ApiService.fetchOwners();
 
       final db = await database;
       Batch batch = db.batch();
 
-      // Clear existing records to keep in sync (optional, or just replace)
-      // Note: we should preserve downloaded and favorite status from tracks, so we use replace 
-      // but maybe preserve existing tracks' favorite/downloaded status.
-      // Easiest is just to replace albums, playlists, messages.
       for (var album in apiAlbums) {
         batch.insert('albums', album.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      for (var owner in apiOwners) {
+        batch.insert('owners', {
+          'id': owner.id,
+          'name': owner.name,
+          'avatarUrl': owner.avatarUrl,
+          'description': owner.description,
+          'ownerType': owner.ownerType,
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
       }
       for (var playlist in apiPlaylists) {
         batch.insert('playlists', playlist.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
@@ -136,13 +149,13 @@ class DatabaseHelper {
       for (var msg in apiMessages) {
         batch.insert('chat_messages', msg.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
       }
-      
+
       await batch.commit(noResult: true);
 
-      // For tracks, carefully merge to not lose downloaded/favorite status
+      // Merge tracks carefully to preserve user's downloaded/favorite/playCount state
       final existingTracks = await getAllTracks();
       final Map<String, TrackEntity> existingTrackMap = { for (var t in existingTracks) t.id: t };
-      
+
       Batch trackBatch = db.batch();
       for (var track in apiTracks) {
         var newTrack = track;
@@ -151,16 +164,14 @@ class DatabaseHelper {
           newTrack = newTrack.copyWith(
             isDownloaded: existing.isDownloaded,
             isFavorite: existing.isFavorite,
-            playCount: existing.playCount
+            playCount: existing.playCount,
           );
         }
         trackBatch.insert('tracks', newTrack.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
       }
       await trackBatch.commit(noResult: true);
-
-      _hasSynced = true;
     } catch (e) {
-      print('Failed to sync from API: \$e');
+      print('Failed to sync from API: $e');
     }
   }
 
@@ -169,6 +180,12 @@ class DatabaseHelper {
     final db = await database;
     final maps = await db.query('albums');
     return maps.map((e) => AlbumEntity.fromMap(e)).toList();
+  }
+
+  Future<List<OwnerEntity>> getAllOwners() async {
+    final db = await database;
+    final maps = await db.query('owners');
+    return maps.map((e) => OwnerEntity.fromMap(e, ownerType: e['ownerType'] as String)).toList();
   }
 
   Future<List<TrackEntity>> getAllTracks() async {
