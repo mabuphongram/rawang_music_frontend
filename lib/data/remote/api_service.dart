@@ -29,26 +29,21 @@ class ApiService {
   static Future<List<OwnerEntity>> fetchOwners() async {
     final results = <OwnerEntity>[];
     try {
-      final singersRes = await http.get(Uri.parse('$baseUrl/singers'));
-      if (singersRes.statusCode == 200) {
-        final List<dynamic> data = json.decode(singersRes.body);
-        for (final j in data) {
-          results.add(OwnerEntity.fromMap(j, ownerType: 'singer'));
-        }
+      final responses = await Future.wait([
+        http.get(Uri.parse('$baseUrl/singers')).timeout(const Duration(seconds: 5)),
+        http.get(Uri.parse('$baseUrl/organizations')).timeout(const Duration(seconds: 5)),
+      ]);
+
+      if (responses[0].statusCode == 200) {
+        final List<dynamic> data = json.decode(responses[0].body);
+        for (final j in data) results.add(OwnerEntity.fromMap(j, ownerType: 'singer'));
+      }
+      if (responses[1].statusCode == 200) {
+        final List<dynamic> data = json.decode(responses[1].body);
+        for (final j in data) results.add(OwnerEntity.fromMap(j, ownerType: 'organization'));
       }
     } catch (e) {
-      print('Error fetching singers: $e');
-    }
-    try {
-      final orgsRes = await http.get(Uri.parse('$baseUrl/organizations'));
-      if (orgsRes.statusCode == 200) {
-        final List<dynamic> data = json.decode(orgsRes.body);
-        for (final j in data) {
-          results.add(OwnerEntity.fromMap(j, ownerType: 'organization'));
-        }
-      }
-    } catch (e) {
-      print('Error fetching organizations: $e');
+      print('Error fetching owners: $e');
     }
     return results;
   }
@@ -58,7 +53,7 @@ class ApiService {
   // ─────────────────────────────────────────────
   static Future<List<AlbumEntity>> fetchAlbums() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/albums'));
+      final response = await http.get(Uri.parse('$baseUrl/albums')).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((j) => AlbumEntity.fromMap(j)).toList();
@@ -74,7 +69,7 @@ class ApiService {
   // ─────────────────────────────────────────────
   static Future<List<TrackEntity>> fetchTracks() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/tracks'));
+      final response = await http.get(Uri.parse('$baseUrl/tracks')).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((j) => TrackEntity.fromMap(j)).toList();
@@ -90,7 +85,7 @@ class ApiService {
   // ─────────────────────────────────────────────
   static Future<List<PlaylistEntity>> fetchPlaylists() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/playlists'));
+      final response = await http.get(Uri.parse('$baseUrl/playlists')).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((j) => PlaylistEntity.fromMap(j)).toList();
@@ -106,7 +101,7 @@ class ApiService {
   // ─────────────────────────────────────────────
   static Future<List<ChatMessageEntity>> fetchChatMessages() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/chat/messages'));
+      final response = await http.get(Uri.parse('$baseUrl/chat/messages')).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((j) => ChatMessageEntity.fromMap(j)).toList();

@@ -148,11 +148,19 @@ class DatabaseHelper {
 
   Future<void> _performSync() async {
     try {
-      final apiAlbums = await ApiService.fetchAlbums();
-      final apiTracks = await ApiService.fetchTracks();
-      final apiPlaylists = await ApiService.fetchPlaylists();
-      final apiMessages = await ApiService.fetchChatMessages();
-      final apiOwners = await ApiService.fetchOwners();
+      final results = await Future.wait([
+        ApiService.fetchAlbums(),
+        ApiService.fetchTracks(),
+        ApiService.fetchPlaylists(),
+        ApiService.fetchChatMessages(),
+        ApiService.fetchOwners(),
+      ]);
+
+      final apiAlbums = results[0] as List<AlbumEntity>;
+      final apiTracks = results[1] as List<TrackEntity>;
+      final apiPlaylists = results[2] as List<PlaylistEntity>;
+      final apiMessages = results[3] as List<ChatMessageEntity>;
+      final apiOwners = results[4] as List<OwnerEntity>;
 
       final db = await database;
       Batch batch = db.batch();
