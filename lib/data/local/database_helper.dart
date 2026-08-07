@@ -120,7 +120,15 @@ class DatabaseHelper {
     // batch.commit(noResult: true);
   }
 
-  Future<void> syncFromApi() async {
+  Future<void>? _syncFuture;
+
+  Future<void> syncFromApi() {
+    if (_syncFuture != null) return _syncFuture!;
+    _syncFuture = _performSync().whenComplete(() => _syncFuture = null);
+    return _syncFuture!;
+  }
+
+  Future<void> _performSync() async {
     try {
       final apiAlbums = await ApiService.fetchAlbums();
       final apiTracks = await ApiService.fetchTracks();

@@ -13,9 +13,14 @@ class ChatViewModel extends ChangeNotifier {
   }
 
   Future<void> _loadMessages() async {
+    // ── Step 1: show cached data instantly ──────────────────────────────
+    messages = await db.getAllMessages();
+    notifyListeners(); // ← UI renders immediately with cached data
+
+    // ── Step 2: sync from API in background, write to cache, refresh UI ─
     await db.syncFromApi();
     messages = await db.getAllMessages();
-    notifyListeners();
+    notifyListeners(); // ← UI refreshes silently with fresh data
   }
 
   Future<void> sendMessage(
