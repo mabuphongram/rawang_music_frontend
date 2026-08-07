@@ -31,13 +31,31 @@ class DatabaseHelper {
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < newVersion) {
+    if (oldVersion < 3) {
+      // For versions older than 3 (which required a schema change from coverResName to coverImage),
+      // we do a full reset.
       await db.execute("DROP TABLE IF EXISTS albums");
       await db.execute("DROP TABLE IF EXISTS tracks");
       await db.execute("DROP TABLE IF EXISTS playlists");
       await db.execute("DROP TABLE IF EXISTS playlist_tracks");
       await db.execute("DROP TABLE IF EXISTS chat_messages");
+      await db.execute("DROP TABLE IF EXISTS owners");
       await _onCreate(db, newVersion);
+      return;
+    }
+
+    if (oldVersion == 3) {
+      // Incremental migration for v3 -> v4: just add the owners table
+      // This preserves all existing tracks, favorites, and downloaded status.
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS owners (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          avatarUrl TEXT,
+          description TEXT,
+          ownerType TEXT
+        )
+      ''');
     }
   }
 
