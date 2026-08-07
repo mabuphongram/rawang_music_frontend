@@ -230,9 +230,11 @@ class AudioPlayerEngine extends ChangeNotifier {
         }
       } catch (e) {
         print('Error playing URL: $e');
+        if (currentToken != _playbackToken) return;
         _playAcousticBambooTone(track);
       }
     } else {
+      if (currentToken != _playbackToken) return;
       _playAcousticBambooTone(track);
     }
   }
