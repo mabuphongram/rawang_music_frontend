@@ -64,6 +64,7 @@ class AudioPlayerEngine extends ChangeNotifier {
 
   Timer? _synthTimer;
   bool _isSynthPlaying = false;
+  int _playbackToken = 0;
 
   AudioPlayerEngine() {
     _audioPlayer.positionStream.listen((pos) {
@@ -204,6 +205,7 @@ class AudioPlayerEngine extends ChangeNotifier {
   }
 
   void _startAudioPlayback(TrackEntity track) async {
+    final currentToken = ++_playbackToken;
     final rawUrl = _playerState.isKaraokeMode && track.karaokeAudioUrl != null
         ? track.karaokeAudioUrl!
         : track.audioUrl;
@@ -215,6 +217,10 @@ class AudioPlayerEngine extends ChangeNotifier {
       _isSynthPlaying = false;
       try {
         final duration = await _audioPlayer.setUrl(url);
+        
+        // If another track was selected while we were awaiting setUrl, abort!
+        if (currentToken != _playbackToken) return;
+
         // Capture real duration from the stream header
         if (duration != null) {
           _updateState(_playerState.copyWith(durationSec: duration.inSeconds));

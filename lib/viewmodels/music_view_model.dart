@@ -21,6 +21,11 @@ class MusicViewModel extends ChangeNotifier {
   TrackEntity? trackToAddToPlaylist;
   TrackEntity? trackToShare;
 
+  // Sync State
+  bool isSyncing = false;
+  DateTime? lastSyncedAt;
+  String? syncError;
+
   List<AlbumEntity> albums = [];
   List<TrackEntity> tracks = [];
   List<OwnerEntity> owners = [];
@@ -79,17 +84,30 @@ class MusicViewModel extends ChangeNotifier {
     notifyListeners(); // ← UI renders immediately with cached data
 
     // ── Step 2: sync from API in background, write to cache, refresh UI ─
-    await db.syncFromApi();            // fetch → store to SQLite (owners included)
-    albums = await db.getAllAlbums();  // read fresh cache
-    tracks = await db.getAllTracks();
-    owners = await db.getAllOwners();  // read fresh owners from cache
-    downloadedTracks = await db.getDownloadedTracks();
-    favoriteTracks = await db.getFavoriteTracks();
-    playlists = await db.getAllPlaylists();
-    if (selectedPlaylist != null) {
-      selectedPlaylistTracks = await db.getTracksForPlaylist(selectedPlaylist!.id);
+    isSyncing = true;
+    syncError = null;
+    notifyListeners();
+
+    try {
+      await db.syncFromApi();            // fetch → store to SQLite (owners included)
+      lastSyncedAt = DateTime.now();
+      
+      albums = await db.getAllAlbums();  // read fresh cache
+      tracks = await db.getAllTracks();
+      owners = await db.getAllOwners();  // read fresh owners from cache
+      downloadedTracks = await db.getDownloadedTracks();
+      favoriteTracks = await db.getFavoriteTracks();
+      playlists = await db.getAllPlaylists();
+      if (selectedPlaylist != null) {
+        selectedPlaylistTracks = await db.getTracksForPlaylist(selectedPlaylist!.id);
+      }
+    } catch (e) {
+      syncError = "Failed to sync: $e";
+      print(syncError);
+    } finally {
+      isSyncing = false;
+      notifyListeners(); // ← UI refreshes silently with fresh data or error state
     }
-    notifyListeners(); // ← UI refreshes silently with fresh data
   }
 
   void selectTab(AppTab tab) {

@@ -147,23 +147,24 @@ class DatabaseHelper {
   }
 
   Future<void> _performSync() async {
-    try {
-      final results = await Future.wait([
-        ApiService.fetchAlbums(),
-        ApiService.fetchTracks(),
-        ApiService.fetchPlaylists(),
-        ApiService.fetchChatMessages(),
-        ApiService.fetchOwners(),
-      ]);
+    final results = await Future.wait([
+      ApiService.fetchAlbums(),
+      ApiService.fetchTracks(),
+      ApiService.fetchPlaylists(),
+      ApiService.fetchChatMessages(),
+      ApiService.fetchOwners(),
+    ]);
 
-      final apiAlbums = results[0] as List<AlbumEntity>;
-      final apiTracks = results[1] as List<TrackEntity>;
-      final apiPlaylists = results[2] as List<PlaylistEntity>;
-      final apiMessages = results[3] as List<ChatMessageEntity>;
-      final apiOwners = results[4] as List<OwnerEntity>;
+    final apiAlbums = results[0] as List<AlbumEntity>;
+    final apiTracks = results[1] as List<TrackEntity>;
+    final apiPlaylists = results[2] as List<PlaylistEntity>;
+    final apiMessages = results[3] as List<ChatMessageEntity>;
+    final apiOwners = results[4] as List<OwnerEntity>;
 
-      final db = await database;
-      Batch batch = db.batch();
+    final db = await database;
+
+    await db.transaction((txn) async {
+      Batch batch = txn.batch();
 
       for (var album in apiAlbums) {
         batch.insert('albums', album.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
@@ -184,13 +185,11 @@ class DatabaseHelper {
         batch.insert('chat_messages', msg.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
       }
 
-      await batch.commit(noResult: true);
-
       // Merge tracks carefully to preserve user's downloaded/favorite/playCount state
-      final existingTracks = await getAllTracks();
+      final existingMaps = await txn.query('tracks');
+      final existingTracks = existingMaps.map((e) => TrackEntity.fromMap(e)).toList();
       final Map<String, TrackEntity> existingTrackMap = { for (var t in existingTracks) t.id: t };
 
-      Batch trackBatch = db.batch();
       for (var track in apiTracks) {
         var newTrack = track;
         if (existingTrackMap.containsKey(track.id)) {
@@ -201,12 +200,11 @@ class DatabaseHelper {
             playCount: existing.playCount,
           );
         }
-        trackBatch.insert('tracks', newTrack.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+        batch.insert('tracks', newTrack.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
       }
-      await trackBatch.commit(noResult: true);
-    } catch (e) {
-      print('Failed to sync from API: $e');
-    }
+
+      await batch.commit(noResult: true);
+    });
   }
 
   // DAO equivalents
