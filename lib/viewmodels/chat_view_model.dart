@@ -32,7 +32,7 @@ class ChatViewModel extends ChangeNotifier {
     if (messageText.trim().isEmpty && trackId == null) return;
 
     final newMessage = ChatMessageEntity(
-      id: "msg_user_\${DateTime.now().millisecondsSinceEpoch}",
+      id: "msg_user_${DateTime.now().millisecondsSinceEpoch}",
       senderName: senderName.isEmpty ? "User" : senderName,
       message: messageText,
       attachedTrackId: trackId,

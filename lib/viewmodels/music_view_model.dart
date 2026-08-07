@@ -168,7 +168,7 @@ class MusicViewModel extends ChangeNotifier {
 
   Future<void> createPlaylist(String name, String description) async {
     final newPlaylist = PlaylistEntity(
-      id: "pl_\${DateTime.now().millisecondsSinceEpoch}",
+      id: "pl_${DateTime.now().millisecondsSinceEpoch}",
       name: name,
       description: description,
     );
@@ -211,12 +211,12 @@ class MusicViewModel extends ChangeNotifier {
     String lyrics,
     bool hasKaraoke,
   ) async {
-    final albumId = "alb_custom_\${DateTime.now().millisecondsSinceEpoch}";
-    final trackId = "trk_custom_\${DateTime.now().millisecondsSinceEpoch}";
+    final albumId = "alb_custom_${DateTime.now().millisecondsSinceEpoch}";
+    final trackId = "trk_custom_${DateTime.now().millisecondsSinceEpoch}";
 
     final newAlbum = AlbumEntity(
       id: albumId,
-      title: albumTitle.isEmpty ? "\$title Single" : albumTitle,
+      title: albumTitle.isEmpty ? "$title Single" : albumTitle,
       ownerType: ownerType.name,
       ownerName: artistName.isEmpty ? "Community Contributor" : artistName,
       coverImage: '',
@@ -231,7 +231,7 @@ class MusicViewModel extends ChangeNotifier {
       title: title,
       rawangTitle: rawangTitle,
       artistName: artistName.isEmpty ? "Community Contributor" : artistName,
-      albumName: albumTitle.isEmpty ? "\$title Single" : albumTitle,
+      albumName: albumTitle.isEmpty ? "$title Single" : albumTitle,
       ownerType: ownerType.name,
       durationSeconds: 210,
       audioUrl: "synth:440:600",
