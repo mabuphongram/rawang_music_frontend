@@ -138,6 +138,7 @@ class MainScreen extends StatelessWidget {
       HomeScreen(
         albums: viewModel.albums,
         tracks: viewModel.tracks,
+        popularTracks: viewModel.popularTracks,
         owners: viewModel.owners,
         currentPlayingTrackId: viewModel.playerEngine.playerState.currentTrack?.id,
         onSelectAlbum: viewModel.selectAlbum,

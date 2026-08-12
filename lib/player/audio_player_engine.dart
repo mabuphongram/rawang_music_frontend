@@ -69,6 +69,7 @@ class AudioPlayerEngine extends ChangeNotifier {
   Timer? _synthTimer;
   bool _isSynthPlaying = false;
   int _playbackToken = 0;
+  bool _isAdvancingTrack = false;
 
   AudioPlayerEngine() {
     _audioPlayer.positionStream.listen((pos) {
@@ -78,7 +79,7 @@ class AudioPlayerEngine extends ChangeNotifier {
     });
     
     _audioPlayer.playerStateStream.listen((state) {
-      if (!_isSynthPlaying) {
+      if (!_isSynthPlaying && !_isAdvancingTrack) {
         if (state.processingState == ProcessingState.completed) {
           _onPlaybackFinished();
         }
@@ -275,11 +276,13 @@ class AudioPlayerEngine extends ChangeNotifier {
     if (completedTrack != null) {
       onTrackCompleted?.call(completedTrack);
     }
+    _isAdvancingTrack = true;
     if (_playerState.isLooping && _playerState.currentTrack != null) {
       playTrack(_playerState.currentTrack!, queue: _playerState.playlistQueue);
     } else {
       playNext();
     }
+    _isAdvancingTrack = false;
   }
 
   void _stopCurrentPlayback() {

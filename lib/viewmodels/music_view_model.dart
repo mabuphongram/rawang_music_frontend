@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rawang_melodies/data/remote/api_service.dart';
 import 'package:rawang_melodies/data/local/database_helper.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
@@ -32,6 +34,7 @@ class MusicViewModel extends ChangeNotifier {
   List<TrackEntity> downloadedTracks = [];
   List<TrackEntity> favoriteTracks = [];
   List<PlaylistEntity> playlists = [];
+  List<TrackEntity> popularTracks = [];
 
   List<AlbumEntity> get filteredAlbums {
     final query = searchQuery.trim().toLowerCase();
@@ -105,6 +108,7 @@ class MusicViewModel extends ChangeNotifier {
       if (selectedPlaylist != null) {
         selectedPlaylistTracks = await db.getTracksForPlaylist(selectedPlaylist!.id);
       }
+      await _loadPopularTracks();
     } catch (e) {
       syncError = "Failed to sync: $e";
       print(syncError);
@@ -112,6 +116,50 @@ class MusicViewModel extends ChangeNotifier {
       isSyncing = false;
       notifyListeners(); // ← UI refreshes silently with fresh data or error state
     }
+  }
+
+  Future<void> _loadPopularTracks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cacheKey = 'popular_tracks_cache';
+    final timeKey = 'popular_tracks_timestamp';
+
+    final cachedTimeStr = prefs.getString(timeKey);
+    final cachedData = prefs.getString(cacheKey);
+
+    bool fetchFromServer = true;
+
+    if (cachedTimeStr != null && cachedData != null) {
+      final cachedTime = DateTime.parse(cachedTimeStr);
+      final difference = DateTime.now().difference(cachedTime);
+      if (difference.inDays < 1) {
+        fetchFromServer = false;
+        try {
+          final List<dynamic> jsonList = json.decode(cachedData);
+          popularTracks = jsonList.map((j) => TrackEntity.fromMap(j)).toList();
+        } catch (e) {
+          fetchFromServer = true; // fallback
+        }
+      }
+    }
+
+    if (fetchFromServer) {
+      final tracks = await ApiService.fetchPopularTracks();
+      if (tracks.isNotEmpty) {
+        popularTracks = tracks;
+        prefs.setString(timeKey, DateTime.now().toIso8601String());
+        prefs.setString(cacheKey, json.encode(tracks.map((t) => t.toMap()).toList()));
+      }
+    }
+    
+    // Merge local state (isDownloaded, isFavorite) to popular tracks
+    final Map<String, TrackEntity> existingTrackMap = { for (var t in this.tracks) t.id: t };
+    popularTracks = popularTracks.map((pt) {
+      if (existingTrackMap.containsKey(pt.id)) {
+        final existing = existingTrackMap[pt.id]!;
+        return pt.copyWith(isDownloaded: existing.isDownloaded, isFavorite: existing.isFavorite);
+      }
+      return pt;
+    }).toList();
   }
 
   void selectTab(AppTab tab) {

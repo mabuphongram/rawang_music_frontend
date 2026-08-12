@@ -80,6 +80,19 @@ class ApiService {
     return [];
   }
 
+  static Future<List<TrackEntity>> fetchPopularTracks() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/tracks/popular')).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((j) => TrackEntity.fromMap(j)).toList();
+      }
+    } catch (e) {
+      print('Error fetching popular tracks: $e');
+    }
+    return [];
+  }
+
   // ─────────────────────────────────────────────
   // Playlists
   // ─────────────────────────────────────────────

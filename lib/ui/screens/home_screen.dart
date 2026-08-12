@@ -7,6 +7,7 @@ import 'package:rawang_melodies/ui/components/track_list_item.dart';
 class HomeScreen extends StatelessWidget {
   final List<AlbumEntity> albums;
   final List<TrackEntity> tracks;
+  final List<TrackEntity> popularTracks;
   final List<OwnerEntity> owners;
   final String? currentPlayingTrackId;
   final void Function(AlbumEntity) onSelectAlbum;
@@ -22,6 +23,7 @@ class HomeScreen extends StatelessWidget {
     super.key,
     required this.albums,
     required this.tracks,
+    required this.popularTracks,
     required this.owners,
     this.currentPlayingTrackId,
     required this.onSelectAlbum,
@@ -216,25 +218,32 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           
-          ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            physics: const NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            itemCount: tracks.take(6).length,
-            separatorBuilder: (_, index) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final track = tracks[index];
-              return TrackListItem(
-                track: track,
-                isPlayingCurrentTrack: track.id == currentPlayingTrackId,
-                onTrackClick: () => onPlayTrack(track, tracks),
-                onToggleDownload: () => onToggleDownload(track),
-                onToggleFavorite: () => onToggleFavorite(track),
-                onAddToPlaylist: () => onAddToPlaylist(track),
-                onShare: () => onShare(track),
-              );
-            },
-          ),
+          popularTracks.isEmpty
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemCount: popularTracks.length,
+                  separatorBuilder: (_, index) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final track = popularTracks[index];
+                    return TrackListItem(
+                      track: track,
+                      isPlayingCurrentTrack: track.id == currentPlayingTrackId,
+                      onTrackClick: () => onPlayTrack(track, popularTracks),
+                      onToggleDownload: () => onToggleDownload(track),
+                      onToggleFavorite: () => onToggleFavorite(track),
+                      onAddToPlaylist: () => onAddToPlaylist(track),
+                      onShare: () => onShare(track),
+                    );
+                  },
+                ),
         ],
       ),
     );
