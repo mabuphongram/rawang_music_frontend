@@ -68,6 +68,10 @@ class MusicViewModel extends ChangeNotifier {
     playerEngine.addListener(() {
       notifyListeners();
     });
+    // Increment play count only when a track finishes playing naturally
+    playerEngine.onTrackCompleted = (track) {
+      ApiService.incrementPlayCount(track.id);
+    };
   }
 
   Future<void> _loadData() async {
@@ -151,7 +155,6 @@ class MusicViewModel extends ChangeNotifier {
 
   void playTrack(TrackEntity track, {List<TrackEntity>? playlistContext}) {
     playerEngine.playTrack(track, queue: playlistContext ?? [track]);
-    // increment play count logic would go here
   }
 
   Future<void> toggleDownload(TrackEntity track) async {

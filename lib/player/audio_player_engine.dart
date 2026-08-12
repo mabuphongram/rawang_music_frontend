@@ -60,6 +60,10 @@ class AudioPlayerEngine extends ChangeNotifier {
   final AudioPlayer _audioPlayer = AudioPlayer();
   PlayerStateData _playerState = PlayerStateData();
 
+  /// Called with the track that just finished playing naturally.
+  /// Set this from outside (e.g. MusicViewModel) to react to completion.
+  void Function(TrackEntity track)? onTrackCompleted;
+
   PlayerStateData get playerState => _playerState;
 
   Timer? _synthTimer;
@@ -266,6 +270,11 @@ class AudioPlayerEngine extends ChangeNotifier {
   }
 
   void _onPlaybackFinished() {
+    final completedTrack = _playerState.currentTrack;
+    // Notify listener (e.g. ViewModel) that this track finished naturally
+    if (completedTrack != null) {
+      onTrackCompleted?.call(completedTrack);
+    }
     if (_playerState.isLooping && _playerState.currentTrack != null) {
       playTrack(_playerState.currentTrack!, queue: _playerState.playlistQueue);
     } else {

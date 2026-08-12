@@ -170,6 +170,20 @@ class ApiService {
   }
 
   // ─────────────────────────────────────────────
+  // Play count
+  // ─────────────────────────────────────────────
+  static Future<void> incrementPlayCount(String trackId) async {
+    try {
+      await http
+          .post(Uri.parse('$baseUrl/tracks/$trackId/play'))
+          .timeout(const Duration(seconds: 5));
+    } catch (e) {
+      // Fire-and-forget — do not block playback on network errors
+      print('Error incrementing play count for $trackId: $e');
+    }
+  }
+
+  // ─────────────────────────────────────────────
   // Albums / Tracks CRUD (for contribute feature)
   // ─────────────────────────────────────────────
   static Future<bool> createAlbum(AlbumEntity album) async {

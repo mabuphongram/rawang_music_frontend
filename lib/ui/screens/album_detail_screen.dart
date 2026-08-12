@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
+import 'package:rawang_melodies/data/remote/api_service.dart';
 import 'package:rawang_melodies/ui/components/album_card.dart';
 import 'package:rawang_melodies/ui/components/track_list_item.dart';
 
@@ -65,15 +66,46 @@ class AlbumDetailScreen extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.asset(
-                      'assets/images/img_rawang_hero_1785383680261.jpg',
-                      width: 110,
-                      height: 110,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+                  Builder(builder: (context) {
+                    final imageUrl = ApiService.resolveMediaUrl(album.coverImage);
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: imageUrl.isEmpty
+                          ? Container(
+                              width: 110,
+                              height: 110,
+                              color: Colors.grey.shade800,
+                              child: const Center(
+                                child: Icon(Icons.album, size: 40, color: Colors.white54),
+                              ),
+                            )
+                          : Image.network(
+                              imageUrl,
+                              width: 110,
+                              height: 110,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (context, child, progress) {
+                                if (progress == null) return child;
+                                return Container(
+                                  width: 110,
+                                  height: 110,
+                                  color: Colors.grey.shade800,
+                                  child: const Center(child: CircularProgressIndicator()),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 110,
+                                  height: 110,
+                                  color: Colors.grey.shade800,
+                                  child: const Center(
+                                    child: Icon(Icons.album, size: 40, color: Colors.white54),
+                                  ),
+                                );
+                              },
+                            ),
+                    );
+                  }),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
