@@ -112,9 +112,13 @@ class ApiService {
   // ─────────────────────────────────────────────
   // Chat messages
   // ─────────────────────────────────────────────
-  static Future<List<ChatMessageEntity>> fetchChatMessages() async {
+  static Future<List<ChatMessageEntity>> fetchChatMessages({int? beforeTimestamp, int limit = 20}) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/chat/messages')).timeout(const Duration(seconds: 5));
+      String url = '$baseUrl/chat/messages?limit=$limit';
+      if (beforeTimestamp != null) {
+        url += '&before=$beforeTimestamp';
+      }
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((j) => ChatMessageEntity.fromMap(j)).toList();

@@ -111,8 +111,6 @@ class AlbumDetailScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        OwnerChip(ownerTypeString: album.ownerType),
-                        const SizedBox(height: 6),
                         Text(
                           album.title,
                           style: TextStyle(

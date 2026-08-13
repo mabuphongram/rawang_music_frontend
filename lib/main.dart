@@ -10,6 +10,7 @@ import 'package:rawang_melodies/ui/screens/albums_screen.dart';
 import 'package:rawang_melodies/ui/screens/community_chat_screen.dart';
 import 'package:rawang_melodies/ui/screens/home_screen.dart';
 import 'package:rawang_melodies/ui/screens/offline_screen.dart';
+import 'package:rawang_melodies/ui/screens/owners_screen.dart';
 import 'package:rawang_melodies/ui/screens/playlists_screen.dart';
 import 'package:rawang_melodies/ui/theme.dart';
 import 'package:rawang_melodies/viewmodels/chat_view_model.dart';
@@ -169,6 +170,13 @@ class MainScreen extends StatelessWidget {
           }
           viewModel.selectTab(AppTab.albums);
         },
+        onSeeAllOwners: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => OwnersScreen(owners: viewModel.owners),
+            ),
+          );
+        },
       ),
 
       // AppTab.albums (index 1)
@@ -248,6 +256,7 @@ class MainScreen extends StatelessWidget {
         allTracks: viewModel.tracks,
         currentPlayingTrack: viewModel.playerEngine.playerState.currentTrack,
         onSendMessage: chatViewModel.sendMessage,
+        onLoadMore: chatViewModel.loadMoreMessages,
         onPlayTrackById: (trackId) {
           final track = viewModel.tracks.firstWhere((t) => t.id == trackId);
           viewModel.playTrack(track, playlistContext: [track]);

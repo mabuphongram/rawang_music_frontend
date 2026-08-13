@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
 
 class CommunityChatScreen extends StatefulWidget {
@@ -8,6 +9,7 @@ class CommunityChatScreen extends StatefulWidget {
   final TrackEntity? currentPlayingTrack;
   final void Function(String senderName, String messageText, String? trackId, String? trackTitle) onSendMessage;
   final void Function(String) onPlayTrackById;
+  final Future<void> Function() onLoadMore;
 
   const CommunityChatScreen({
     super.key,
@@ -16,6 +18,7 @@ class CommunityChatScreen extends StatefulWidget {
     this.currentPlayingTrack,
     required this.onSendMessage,
     required this.onPlayTrackById,
+    required this.onLoadMore,
   });
 
   @override
@@ -31,7 +34,18 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
   @override
   void initState() {
     super.initState();
+    _loadSavedName();
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+  }
+
+  Future<void> _loadSavedName() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedName = prefs.getString('chat_user_name');
+    if (savedName != null && savedName.isNotEmpty) {
+      setState(() {
+        _nameController.text = savedName;
+      });
+    }
   }
 
   @override
@@ -97,7 +111,7 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                     ),
                   ),
                   Text(
-                    "Connect with Rawang music lovers & share song suggestions",
+                    "Dvmv́nrà",
                     style: TextStyle(
                       fontSize: 11,
                       color: theme.colorScheme.onBackground.withOpacity(0.7),
@@ -110,14 +124,16 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
         ),
         const SizedBox(height: 12),
         Expanded(
-          child: ListView.separated(
-            controller: _scrollController,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: widget.messages.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (context, index) {
-              final msg = widget.messages[index];
-              final isUser = msg.isUser;
+          child: RefreshIndicator(
+            onRefresh: widget.onLoadMore,
+            child: ListView.separated(
+              controller: _scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: widget.messages.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (context, index) {
+                final msg = widget.messages[index];
+                final isUser = msg.senderName == _nameController.text.trim();
 
               return Column(
                 crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -210,7 +226,8 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
             },
           ),
         ),
-        const SizedBox(height: 8),
+      ),
+      const SizedBox(height: 8),
         if (widget.currentPlayingTrack != null)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16).copyWith(bottom: 6),
@@ -302,11 +319,25 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
     );
   }
 
-  void _sendMessage() {
-    if (_messageController.text.trim().isNotEmpty) {
+  void _sendMessage() async {
+    final name = _nameController.text.trim();
+    final message = _messageController.text.trim();
+
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your name first.')),
+      );
+      return;
+    }
+
+    if (message.isNotEmpty) {
+      // Save name to preferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('chat_user_name', name);
+
       widget.onSendMessage(
-        _nameController.text.trim(),
-        _messageController.text.trim(),
+        name,
+        message,
         _attachCurrentTrack ? widget.currentPlayingTrack?.id : null,
         _attachCurrentTrack ? widget.currentPlayingTrack?.title : null,
       );

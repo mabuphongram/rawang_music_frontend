@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:rawang_melodies/player/audio_player_engine.dart';
-import 'package:rawang_melodies/ui/components/album_card.dart'; // For OwnerChip
-
 class FullScreenPlayerModal extends StatefulWidget {
   final PlayerStateData playerState;
   final VoidCallback onDismiss;
@@ -233,8 +231,6 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> {
                     ),
                     
                   const SizedBox(height: 16),
-                  OwnerChip(ownerTypeString: track.ownerType),
-                  const SizedBox(height: 8),
                   Text(
                     track.title,
                     style: TextStyle(

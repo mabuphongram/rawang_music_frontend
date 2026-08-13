@@ -18,6 +18,7 @@ class HomeScreen extends StatelessWidget {
   final void Function(TrackEntity) onShare;
   final VoidCallback onOpenAddSongDialog;
   final void Function(String) onFilterByOwner;
+  final VoidCallback onSeeAllOwners;
 
   const HomeScreen({
     super.key,
@@ -34,6 +35,7 @@ class HomeScreen extends StatelessWidget {
     required this.onShare,
     required this.onOpenAddSongDialog,
     required this.onFilterByOwner,
+    required this.onSeeAllOwners,
   });
 
   @override
@@ -126,7 +128,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () => onFilterByOwner("ALL"),
+                  onTap: onSeeAllOwners,
                   child: Text(
                     "See All",
                     style: TextStyle(
