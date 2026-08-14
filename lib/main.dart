@@ -81,21 +81,28 @@ class MainScreen extends StatelessWidget {
                     context: context,
                     isScrollControlled: true,
                     backgroundColor: Colors.transparent,
-                    builder: (context) => FullScreenPlayerModal(
-                      playerState: playerState,
-                      onDismiss: () => Navigator.pop(context),
-                      onTogglePlayPause: musicViewModel.playerEngine.togglePlayPause,
-                      onNext: musicViewModel.playerEngine.playNext,
-                      onPrevious: musicViewModel.playerEngine.playPrevious,
-                      onSeekTo: musicViewModel.playerEngine.seekTo,
-                      onSeekRelative: musicViewModel.playerEngine.seekRelative,
-                      onToggleLoop: musicViewModel.playerEngine.toggleLoop,
-                      onToggleShuffle: musicViewModel.playerEngine.toggleShuffle,
-                      onToggleDownload: () => musicViewModel.toggleDownload(playerState.currentTrack!),
-                      onToggleFavorite: () => musicViewModel.toggleFavorite(playerState.currentTrack!),
-                      onToggleKaraokeMode: musicViewModel.toggleKaraokeMode,
-                      onShare: () => musicViewModel.setTrackToShare(playerState.currentTrack!),
-                    ),
+                    builder: (context) {
+                      return Consumer<MusicViewModel>(
+                        builder: (context, mvm, child) {
+                          final state = mvm.playerEngine.playerState;
+                          return FullScreenPlayerModal(
+                            playerState: state,
+                            onDismiss: () => Navigator.pop(context),
+                            onTogglePlayPause: mvm.playerEngine.togglePlayPause,
+                            onNext: mvm.playerEngine.playNext,
+                            onPrevious: mvm.playerEngine.playPrevious,
+                            onSeekTo: mvm.playerEngine.seekTo,
+                            onSeekRelative: mvm.playerEngine.seekRelative,
+                            onToggleLoop: mvm.playerEngine.toggleLoop,
+                            onToggleShuffle: mvm.playerEngine.toggleShuffle,
+                            onToggleDownload: () => mvm.toggleDownload(state.currentTrack!),
+                            onToggleFavorite: () => mvm.toggleFavorite(state.currentTrack!),
+                            onToggleKaraokeMode: mvm.toggleKaraokeMode,
+                            onShare: () => mvm.setTrackToShare(state.currentTrack!),
+                          );
+                        },
+                      );
+                    },
                   );
                 },
               ),
