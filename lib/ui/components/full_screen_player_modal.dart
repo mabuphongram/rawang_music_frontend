@@ -46,7 +46,36 @@ class FullScreenPlayerModal extends StatefulWidget {
   State<FullScreenPlayerModal> createState() => _FullScreenPlayerModalState();
 }
 
-class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> {
+class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with SingleTickerProviderStateMixin {
+  late AnimationController _rotationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _rotationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 15),
+    );
+    if (widget.playerState.isPlaying) {
+      _rotationController.repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(FullScreenPlayerModal oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.playerState.isPlaying && !oldWidget.playerState.isPlaying) {
+      _rotationController.repeat();
+    } else if (!widget.playerState.isPlaying && oldWidget.playerState.isPlaying) {
+      _rotationController.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _rotationController.dispose();
+    super.dispose();
+  }
   String _formatDuration(int seconds) {
     final mins = seconds ~/ 60;
     final secs = seconds % 60;
@@ -272,35 +301,80 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> {
                         );
                       }
                       
-                      return Container(
-                        width: constraints.maxWidth * 0.70,
-                        height: constraints.maxWidth * 0.70,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          color: theme.colorScheme.surfaceVariant,
-                          image: decorationImage,
-                        ),
-                        child: widget.playerState.isKaraokeMode 
-                            ? Align(
-                                alignment: Alignment.topRight,
-                                child: Container(
-                                  margin: const EdgeInsets.all(12),
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.tertiary,
-                                    borderRadius: BorderRadius.circular(20),
+                      return Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          RotationTransition(
+                            turns: _rotationController,
+                            child: Container(
+                              width: constraints.maxWidth * 0.75,
+                              height: constraints.maxWidth * 0.75,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: const Color(0xFFF3F4F6), // Off-white thick border
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.white.withOpacity(0.15),
+                                    blurRadius: 50,
+                                    spreadRadius: 5,
                                   ),
-                                  child: Text(
-                                    "🎤 SING-ALONG",
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: theme.colorScheme.onTertiary,
+                                  BoxShadow(
+                                    color: Colors.yellow.withOpacity(0.05),
+                                    blurRadius: 60,
+                                    spreadRadius: 10,
+                                  ),
+                                ],
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(40.0), // Very thick white border
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    image: decorationImage,
+                                  ),
+                                  child: Center(
+                                    child: Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: theme.colorScheme.surface, // Center hole matches background
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.3),
+                                            blurRadius: 5,
+                                            spreadRadius: 1,
+                                            offset: const Offset(0, 2),
+                                          )
+                                        ]
+                                      ),
                                     ),
                                   ),
                                 ),
-                              )
-                            : null,
+                              ),
+                            ),
+                          ),
+                          if (widget.playerState.isKaraokeMode)
+                            Positioned(
+                              top: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.tertiary,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  "🎤 SING-ALONG",
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.onTertiary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       );
                     }
                   ),
