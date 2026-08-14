@@ -109,6 +109,20 @@ class ApiService {
     return [];
   }
 
+  /// Returns raw JSON maps so the sync layer can read trackIds.
+  static Future<List<Map<String, dynamic>>> fetchPlaylistsRaw() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/playlists')).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      }
+    } catch (e) {
+      print('Error fetching playlists raw: $e');
+    }
+    return [];
+  }
+
   // ─────────────────────────────────────────────
   // Chat messages
   // ─────────────────────────────────────────────

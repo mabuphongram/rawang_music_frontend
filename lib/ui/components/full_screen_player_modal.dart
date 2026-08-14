@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rawang_melodies/player/audio_player_engine.dart';
+import 'package:rawang_melodies/data/remote/api_service.dart';
 
 class _LyricLine {
   final Duration time;
@@ -9,6 +10,7 @@ class _LyricLine {
 
 class FullScreenPlayerModal extends StatefulWidget {
   final PlayerStateData playerState;
+  final String? albumCoverImage;
   final VoidCallback onDismiss;
   final VoidCallback onTogglePlayPause;
   final VoidCallback onNext;
@@ -25,6 +27,7 @@ class FullScreenPlayerModal extends StatefulWidget {
   const FullScreenPlayerModal({
     super.key,
     required this.playerState,
+    this.albumCoverImage,
     required this.onDismiss,
     required this.onTogglePlayPause,
     required this.onNext,
@@ -252,16 +255,30 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> {
                   const SizedBox(height: 16),
                   LayoutBuilder(
                     builder: (context, constraints) {
+                      final imageUrl = widget.albumCoverImage != null && widget.albumCoverImage!.isNotEmpty
+                          ? ApiService.resolveMediaUrl(widget.albumCoverImage!)
+                          : '';
+                          
+                      DecorationImage? decorationImage;
+                      if (imageUrl.isNotEmpty) {
+                        decorationImage = DecorationImage(
+                          image: NetworkImage(imageUrl),
+                          fit: BoxFit.cover,
+                        );
+                      } else {
+                        decorationImage = const DecorationImage(
+                          image: AssetImage('assets/images/img_rawang_hero_1785383680261.jpg'),
+                          fit: BoxFit.cover,
+                        );
+                      }
+                      
                       return Container(
                         width: constraints.maxWidth * 0.70,
                         height: constraints.maxWidth * 0.70,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
                           color: theme.colorScheme.surfaceVariant,
-                          image: const DecorationImage(
-                            image: AssetImage('assets/images/img_rawang_hero_1785383680261.jpg'),
-                            fit: BoxFit.cover,
-                          ),
+                          image: decorationImage,
                         ),
                         child: widget.playerState.isKaraokeMode 
                             ? Align(

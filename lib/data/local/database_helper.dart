@@ -151,16 +151,18 @@ class DatabaseHelper {
     final results = await Future.wait([
       ApiService.fetchAlbums(),
       ApiService.fetchTracks(),
-      ApiService.fetchPlaylists(),
+      ApiService.fetchPlaylistsRaw(),
       ApiService.fetchChatMessages(),
       ApiService.fetchOwners(),
     ]);
 
     final apiAlbums = results[0] as List<AlbumEntity>;
     final apiTracks = results[1] as List<TrackEntity>;
-    final apiPlaylists = results[2] as List<PlaylistEntity>;
+    final apiPlaylistsRaw = results[2] as List<Map<String, dynamic>>;
     final apiMessages = results[3] as List<ChatMessageEntity>;
     final apiOwners = results[4] as List<OwnerEntity>;
+
+    final apiPlaylists = apiPlaylistsRaw.map((j) => PlaylistEntity.fromMap(j)).toList();
 
     final db = await database;
 
@@ -202,6 +204,22 @@ class DatabaseHelper {
           );
         }
         batch.insert('tracks', newTrack.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+
+      // Sync playlist_tracks from backend trackIds
+      await txn.delete('playlist_tracks');
+      for (var rawPlaylist in apiPlaylistsRaw) {
+        final playlistId = rawPlaylist['id'] as String?;
+        final trackIds = rawPlaylist['trackIds'];
+        if (playlistId != null && trackIds is List) {
+          for (var trackId in trackIds) {
+            final tid = trackId is String ? trackId : trackId.toString();
+            batch.insert('playlist_tracks', {
+              'playlistId': playlistId,
+              'trackId': tid,
+            }, conflictAlgorithm: ConflictAlgorithm.replace);
+          }
+        }
       }
 
       await batch.commit(noResult: true);

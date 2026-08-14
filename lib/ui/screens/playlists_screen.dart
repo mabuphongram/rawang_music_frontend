@@ -9,11 +9,9 @@ class PlaylistsScreen extends StatefulWidget {
   final List<TrackEntity> selectedPlaylistTracks;
   final String? currentPlayingTrackId;
   final void Function(PlaylistEntity?) onSelectPlaylist;
-  final VoidCallback onOpenCreatePlaylistDialog;
   final void Function(TrackEntity, List<TrackEntity>) onPlayTrack;
   final void Function(TrackEntity) onToggleDownload;
   final void Function(TrackEntity) onToggleFavorite;
-  final void Function(String, String) onRemoveFromPlaylist;
   final void Function(TrackEntity) onShare;
 
   const PlaylistsScreen({
@@ -24,11 +22,9 @@ class PlaylistsScreen extends StatefulWidget {
     required this.selectedPlaylistTracks,
     this.currentPlayingTrackId,
     required this.onSelectPlaylist,
-    required this.onOpenCreatePlaylistDialog,
     required this.onPlayTrack,
     required this.onToggleDownload,
     required this.onToggleFavorite,
-    required this.onRemoveFromPlaylist,
     required this.onShare,
   });
 
@@ -106,7 +102,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
                         ),
                       ),
                       Text(
-                        "${widget.selectedPlaylistTracks.length} tracks saved",
+                        "${widget.selectedPlaylistTracks.length} tracks",
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
@@ -156,24 +152,14 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
                     itemCount: widget.selectedPlaylistTracks.length,
                     itemBuilder: (context, index) {
                       final track = widget.selectedPlaylistTracks[index];
-                      return Row(
-                        children: [
-                          Expanded(
-                            child: TrackListItem(
-                              track: track,
-                              isPlayingCurrentTrack: track.id == widget.currentPlayingTrackId,
-                              onTrackClick: () => widget.onPlayTrack(track, widget.selectedPlaylistTracks),
-                              onToggleDownload: () => widget.onToggleDownload(track),
-                              onToggleFavorite: () => widget.onToggleFavorite(track),
-                              onAddToPlaylist: () {},
-                              onShare: () => widget.onShare(track),
-                            ),
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.delete, color: theme.colorScheme.error),
-                            onPressed: () => widget.onRemoveFromPlaylist(widget.selectedPlaylist!.id, track.id),
-                          ),
-                        ],
+                      return TrackListItem(
+                        track: track,
+                        isPlayingCurrentTrack: track.id == widget.currentPlayingTrackId,
+                        onTrackClick: () => widget.onPlayTrack(track, widget.selectedPlaylistTracks),
+                        onToggleDownload: () => widget.onToggleDownload(track),
+                        onToggleFavorite: () => widget.onToggleFavorite(track),
+                        onAddToPlaylist: () {},
+                        onShare: () => widget.onShare(track),
                       );
                     },
                   ),
@@ -189,35 +175,22 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
         const SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "My Music Library",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onBackground,
-                    ),
-                  ),
-                  Text(
-                    "Personalized Playlists & Favorites",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.onBackground.withOpacity(0.7),
-                    ),
-                  ),
-                ],
+              Text(
+                "My Music Library",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onBackground,
+                ),
               ),
-              ElevatedButton.icon(
-                onPressed: widget.onOpenCreatePlaylistDialog,
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text("New Playlist", style: TextStyle(fontSize: 12)),
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              Text(
+                "Personalized Playlists & Favorites",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.onBackground.withOpacity(0.7),
                 ),
               ),
             ],

@@ -85,8 +85,19 @@ class MainScreen extends StatelessWidget {
                       return Consumer<MusicViewModel>(
                         builder: (context, mvm, child) {
                           final state = mvm.playerEngine.playerState;
+                          String? coverImage;
+                          if (state.currentTrack != null) {
+                            for (var album in mvm.albums) {
+                              if (album.id == state.currentTrack!.albumId) {
+                                coverImage = album.coverImage;
+                                break;
+                              }
+                            }
+                          }
+                          
                           return FullScreenPlayerModal(
                             playerState: state,
+                            albumCoverImage: coverImage,
                             onDismiss: () => Navigator.pop(context),
                             onTogglePlayPause: mvm.playerEngine.togglePlayPause,
                             onNext: mvm.playerEngine.playNext,
@@ -230,11 +241,9 @@ class MainScreen extends StatelessWidget {
         selectedPlaylistTracks: viewModel.selectedPlaylistTracks,
         currentPlayingTrackId: viewModel.playerEngine.playerState.currentTrack?.id,
         onSelectPlaylist: viewModel.selectPlaylist,
-        onOpenCreatePlaylistDialog: () => showCreatePlaylistDialog(context, viewModel.createPlaylist),
         onPlayTrack: (track, ctx) => viewModel.playTrack(track, playlistContext: ctx),
         onToggleDownload: viewModel.toggleDownload,
         onToggleFavorite: viewModel.toggleFavorite,
-        onRemoveFromPlaylist: viewModel.removeTrackFromPlaylist,
         onShare: (track) => showShareDialog(context, track),
       ),
 
