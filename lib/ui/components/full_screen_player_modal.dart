@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:rawang_melodies/player/audio_player_engine.dart';
+
+class _LyricLine {
+  final Duration time;
+  final String text;
+  _LyricLine(this.time, this.text);
+}
+
 class FullScreenPlayerModal extends StatefulWidget {
   final PlayerStateData playerState;
   final VoidCallback onDismiss;
@@ -37,12 +44,132 @@ class FullScreenPlayerModal extends StatefulWidget {
 }
 
 class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> {
-  int _selectedPlayerTab = 0; // 0: Cover/Art, 1: Lyrics
-
   String _formatDuration(int seconds) {
     final mins = seconds ~/ 60;
     final secs = seconds % 60;
     return '$mins:${secs.toString().padLeft(2, '0')}';
+  }
+
+  List<_LyricLine> _parseLyrics(String lyrics) {
+    final lines = lyrics.split('\n');
+    final result = <_LyricLine>[];
+    for (var line in lines) {
+      line = line.trim();
+      if (line.isEmpty) continue;
+      if (line.startsWith('[')) {
+        final endBracket = line.indexOf(']');
+        if (endBracket != -1) {
+          final timeStr = line.substring(1, endBracket);
+          final text = line.substring(endBracket + 1).trim();
+          
+          final timeParts = timeStr.split(':');
+          Duration time = Duration.zero;
+          if (timeParts.length == 3) {
+            time = Duration(
+              hours: int.tryParse(timeParts[0]) ?? 0,
+              minutes: int.tryParse(timeParts[1]) ?? 0,
+              seconds: int.tryParse(timeParts[2]) ?? 0,
+            );
+          } else if (timeParts.length == 2) {
+             final secParts = timeParts[1].split('.');
+             if (secParts.length == 2) {
+               time = Duration(
+                 minutes: int.tryParse(timeParts[0]) ?? 0,
+                 seconds: int.tryParse(secParts[0]) ?? 0,
+                 milliseconds: (int.tryParse(secParts[1]) ?? 0) * 10,
+               );
+             } else {
+               time = Duration(
+                 minutes: int.tryParse(timeParts[0]) ?? 0,
+                 seconds: int.tryParse(timeParts[1]) ?? 0,
+               );
+             }
+          }
+          if (text.isNotEmpty) {
+            result.add(_LyricLine(time, text));
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  int _findCurrentLineIndex(List<_LyricLine> lines, int currentPositionSec) {
+    final currentPos = Duration(seconds: currentPositionSec);
+    for (int i = lines.length - 1; i >= 0; i--) {
+      if (currentPos >= lines[i].time) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  Widget _buildLyricsQueue(ThemeData theme, List<_LyricLine> parsedLines, int currentIndex) {
+    if (parsedLines.isEmpty) {
+      return Container(
+        height: 90,
+        alignment: Alignment.center,
+        child: Text(
+          "Lyrics are not available for this song.",
+          style: TextStyle(
+            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      );
+    }
+
+    String line1 = currentIndex > 0 ? parsedLines[currentIndex - 1].text : "";
+    String line2 = currentIndex >= 0 && currentIndex < parsedLines.length ? parsedLines[currentIndex].text : "";
+    String line3 = currentIndex >= -1 && currentIndex + 1 < parsedLines.length ? parsedLines[currentIndex + 1].text : "";
+
+    if (currentIndex == -1) {
+      line1 = "";
+      line2 = "";
+      line3 = parsedLines.isNotEmpty ? parsedLines[0].text : "";
+    }
+
+    return SizedBox(
+      height: 76,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            line1,
+            style: TextStyle(
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            line2,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              fontStyle: FontStyle.italic,
+              color: theme.colorScheme.primary,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            line3,
+            style: TextStyle(
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -51,6 +178,8 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> {
     if (track == null) return const SizedBox.shrink();
 
     final theme = Theme.of(context);
+    final parsedLyrics = _parseLyrics(track.lyrics);
+    final currentLyricIndex = _findCurrentLineIndex(parsedLyrics, widget.playerState.currentPositionSec);
 
     return Container(
       color: theme.colorScheme.surface,
@@ -120,117 +249,48 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      TextButton(
-                        onPressed: () => setState(() => _selectedPlayerTab = 0),
-                        style: TextButton.styleFrom(
-                          foregroundColor: _selectedPlayerTab == 0 ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
-                        ),
-                        child: const Text("Album Art"),
-                      ),
-                      TextButton(
-                        onPressed: () => setState(() => _selectedPlayerTab = 1),
-                        style: TextButton.styleFrom(
-                          foregroundColor: _selectedPlayerTab == 1 ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
-                        ),
-                        child: Text(widget.playerState.isKaraokeMode ? "🎤 Karaoke Lyrics" : "Rawang Lyrics"),
-                      ),
-                    ],
-                  ),
                   const SizedBox(height: 16),
-                  if (_selectedPlayerTab == 0)
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        return Container(
-                          width: constraints.maxWidth * 0.85,
-                          height: constraints.maxWidth * 0.85,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            color: theme.colorScheme.surfaceVariant,
-                            image: const DecorationImage(
-                              image: AssetImage('assets/images/img_rawang_hero_1785383680261.jpg'),
-                              fit: BoxFit.cover,
-                            ),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Container(
+                        width: constraints.maxWidth * 0.70,
+                        height: constraints.maxWidth * 0.70,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: theme.colorScheme.surfaceVariant,
+                          image: const DecorationImage(
+                            image: AssetImage('assets/images/img_rawang_hero_1785383680261.jpg'),
+                            fit: BoxFit.cover,
                           ),
-                          child: widget.playerState.isKaraokeMode 
-                              ? Align(
-                                  alignment: Alignment.topRight,
-                                  child: Container(
-                                    margin: const EdgeInsets.all(12),
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: theme.colorScheme.tertiary,
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Text(
-                                      "🎤 SING-ALONG",
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: theme.colorScheme.onTertiary,
-                                      ),
-                                    ),
+                        ),
+                        child: widget.playerState.isKaraokeMode 
+                            ? Align(
+                                alignment: Alignment.topRight,
+                                child: Container(
+                                  margin: const EdgeInsets.all(12),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.tertiary,
+                                    borderRadius: BorderRadius.circular(20),
                                   ),
-                                )
-                              : null,
-                        );
-                      }
-                    )
-                  else
-                    Container(
-                      width: double.infinity,
-                      height: 260,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: widget.playerState.isKaraokeMode 
-                            ? theme.colorScheme.tertiaryContainer.withOpacity(0.3)
-                            : theme.colorScheme.surfaceVariant.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  widget.playerState.isKaraokeMode ? "🎤 SING-ALONG KARAOKE LYRICS" : "POETRY & LYRICS",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: widget.playerState.isKaraokeMode ? theme.colorScheme.tertiary : theme.colorScheme.primary,
-                                  ),
-                                ),
-                                if (widget.playerState.isKaraokeMode)
-                                  Text(
-                                    "Vocals Muted",
+                                  child: Text(
+                                    "🎤 SING-ALONG",
                                     style: TextStyle(
                                       fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                      color: theme.colorScheme.tertiary,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.onTertiary,
                                     ),
                                   ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              track.lyrics,
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: widget.playerState.isKaraokeMode ? FontWeight.w600 : FontWeight.normal,
-                                color: theme.colorScheme.onSurface,
-                                height: 1.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                                ),
+                              )
+                            : null,
+                      );
+                    }
+                  ),
                     
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
+                  
+                  // Title and Artist
                   Text(
                     track.title,
                     style: TextStyle(
@@ -259,7 +319,14 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> {
                     textAlign: TextAlign.center,
                   ),
                   
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
+                  
+                  // Lyrics Queue
+                  _buildLyricsQueue(theme, parsedLyrics, currentLyricIndex),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Karaoke Button
                   ElevatedButton.icon(
                     onPressed: widget.onToggleKaraokeMode,
                     icon: Icon(widget.playerState.isKaraokeMode ? Icons.mic : Icons.mic_off, size: 18),
