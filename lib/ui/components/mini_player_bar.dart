@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:rawang_melodies/player/audio_player_engine.dart';
+import 'package:rawang_melodies/data/remote/api_service.dart';
 
 class MiniPlayerBar extends StatelessWidget {
   final PlayerStateData playerState;
+  final String? albumCoverImage;
   final VoidCallback onTogglePlayPause;
   final VoidCallback onNext;
   final VoidCallback onExpandPlayer;
@@ -10,6 +12,7 @@ class MiniPlayerBar extends StatelessWidget {
   const MiniPlayerBar({
     super.key,
     required this.playerState,
+    this.albumCoverImage,
     required this.onTogglePlayPause,
     required this.onNext,
     required this.onExpandPlayer,
@@ -58,18 +61,32 @@ class MiniPlayerBar extends StatelessWidget {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.asset(
-                        'assets/images/${track.albumId == "alb_1" || track.albumId == "alb_2" || track.albumId == "alb_3" || track.albumId == "alb_4" || track.albumId == "alb_5" || track.albumId == "alb_6" ? "img_rawang_hero_1785383680261" : "img_rawang_hero_1785383680261"}.jpg',
-                        width: 44,
-                        height: 44,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 44,
-                            height: 44,
-                            color: Colors.grey,
-                            child: const Icon(Icons.album),
-                          );
+                      child: Builder(
+                        builder: (context) {
+                          final imageUrl = albumCoverImage != null && albumCoverImage!.isNotEmpty
+                              ? ApiService.resolveMediaUrl(albumCoverImage!)
+                              : '';
+                          if (imageUrl.isNotEmpty) {
+                            return Image.network(
+                              imageUrl,
+                              width: 44,
+                              height: 44,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(width: 44, height: 44, color: Colors.grey, child: const Icon(Icons.album));
+                              },
+                            );
+                          } else {
+                            return Image.asset(
+                              'assets/images/img_rawang_hero_1785383680261.jpg',
+                              width: 44,
+                              height: 44,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(width: 44, height: 44, color: Colors.grey, child: const Icon(Icons.album));
+                              },
+                            );
+                          }
                         },
                       ),
                     ),

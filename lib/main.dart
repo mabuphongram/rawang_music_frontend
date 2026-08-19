@@ -58,6 +58,16 @@ class MainScreen extends StatelessWidget {
     final chatViewModel = context.watch<ChatViewModel>();
     final playerState = musicViewModel.playerEngine.playerState;
 
+    String? miniPlayerCoverImage;
+    if (playerState.currentTrack != null) {
+      for (var album in musicViewModel.albums) {
+        if (album.id == playerState.currentTrack!.albumId) {
+          miniPlayerCoverImage = album.coverImage;
+          break;
+        }
+      }
+    }
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -74,6 +84,7 @@ class MainScreen extends StatelessWidget {
             if (playerState.currentTrack != null)
               MiniPlayerBar(
                 playerState: playerState,
+                albumCoverImage: miniPlayerCoverImage,
                 onTogglePlayPause: musicViewModel.playerEngine.togglePlayPause,
                 onNext: musicViewModel.playerEngine.playNext,
                 onExpandPlayer: () {

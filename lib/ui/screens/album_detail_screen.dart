@@ -128,7 +128,7 @@ class AlbumDetailScreen extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          "Year ${album.releaseYear} • ${tracks.length} tracks",
+                          "${tracks.length} tracks",
                           style: TextStyle(
                             fontSize: 12,
                             color: theme.colorScheme.onBackground.withOpacity(0.7),

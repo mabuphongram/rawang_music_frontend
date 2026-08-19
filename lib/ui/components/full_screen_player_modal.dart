@@ -228,7 +228,7 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
               Column(
                 children: [
                   Text(
-                    track.albumName,
+                    "PLAYING NOW",
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -236,13 +236,13 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                       letterSpacing: 1,
                     ),
                   ),
-                  // Text(
-                  //   track.genre,
-                  //   style: TextStyle(
-                  //     fontSize: 12,
-                  //     color: theme.colorScheme.onSurfaceVariant,
-                  //   ),
-                  // ),
+                  Text(
+                    track.albumName,
+                    style: TextStyle(
+                      fontSize: 10.7,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ],
               ),
               IconButton(
