@@ -47,14 +47,14 @@ class AlbumDetailScreen extends StatelessWidget {
                 icon: const Icon(Icons.arrow_back),
                 onPressed: onBack,
               ),
-              Text(
-                "Album Details",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onBackground,
-                ),
-              ),
+              // Text(
+              //   "Rvwàng Zaywàrì V1.0.0",
+              //   style: TextStyle(
+              //     fontSize: 18,
+              //     fontWeight: FontWeight.bold,
+              //     color: theme.colorScheme.onBackground,
+              //   ),
+              // ),
             ],
           ),
         ),

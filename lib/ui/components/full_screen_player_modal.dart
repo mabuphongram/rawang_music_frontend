@@ -180,8 +180,7 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
           Text(
             line2,
             style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
+              fontSize: 14,
               fontStyle: FontStyle.italic,
               color: theme.colorScheme.primary,
             ),
@@ -218,6 +217,7 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Column(
         children: [
+          SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -228,21 +228,21 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
               Column(
                 children: [
                   Text(
-                    "RAWANG HERITAGE MUSIC",
+                    track.albumName,
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.primary,
                       letterSpacing: 1,
                     ),
                   ),
-                  Text(
-                    track.genre,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
+                  // Text(
+                  //   track.genre,
+                  //   style: TextStyle(
+                  //     fontSize: 12,
+                  //     color: theme.colorScheme.onSurfaceVariant,
+                  //   ),
+                  // ),
                 ],
               ),
               IconButton(
@@ -307,50 +307,90 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                           RotationTransition(
                             turns: _rotationController,
                             child: Container(
-                              width: constraints.maxWidth * 0.75,
-                              height: constraints.maxWidth * 0.75,
+                              width: constraints.maxWidth * 0.70,
+                              height: constraints.maxWidth * 0.70,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: const Color(0xFFF3F4F6), // Off-white thick border
+                                color: Colors.black,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.white.withOpacity(0.15),
-                                    blurRadius: 50,
-                                    spreadRadius: 5,
-                                  ),
-                                  BoxShadow(
-                                    color: Colors.yellow.withOpacity(0.05),
-                                    blurRadius: 60,
-                                    spreadRadius: 10,
+                                    color: Colors.black.withOpacity(0.4),
+                                    blurRadius: 15,
+                                    spreadRadius: 2,
+                                    offset: const Offset(0, 8),
                                   ),
                                 ],
+                                gradient: RadialGradient(
+                                  colors: [
+                                    Colors.grey[850]!,
+                                    Colors.black,
+                                    Colors.black,
+                                  ],
+                                  stops: const [0.0, 0.4, 1.0],
+                                ),
                               ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(40.0), // Very thick white border
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    image: decorationImage,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  // Vinyl Grooves
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
+                                    ),
+                                    margin: const EdgeInsets.all(12),
                                   ),
-                                  child: Center(
-                                    child: Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: theme.colorScheme.surface, // Center hole matches background
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(0.3),
-                                            blurRadius: 5,
-                                            spreadRadius: 1,
-                                            offset: const Offset(0, 2),
-                                          )
-                                        ]
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white.withOpacity(0.05), width: 1),
+                                    ),
+                                    margin: const EdgeInsets.all(28),
+                                  ),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+                                    ),
+                                    margin: const EdgeInsets.all(44),
+                                  ),
+                                  // Center Album Art Label
+                                  Container(
+                                    width: constraints.maxWidth * 0.28,
+                                    height: constraints.maxWidth * 0.28,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      image: decorationImage,
+                                      border: Border.all(color: Colors.black, width: 4),
+                                    ),
+                                  ),
+                                  // Vinyl Center Hole
+                                  Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: theme.colorScheme.surface,
+                                      border: Border.all(color: Colors.grey[800]!, width: 1),
+                                    ),
+                                  ),
+                                  // Glossy overlay for realism
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: SweepGradient(
+                                        colors: [
+                                          Colors.white.withOpacity(0.0),
+                                          Colors.white.withOpacity(0.15),
+                                          Colors.white.withOpacity(0.0),
+                                          Colors.white.withOpacity(0.15),
+                                          Colors.white.withOpacity(0.0),
+                                        ],
+                                        stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
                                       ),
                                     ),
                                   ),
-                                ),
+                                ],
                               ),
                             ),
                           ),
@@ -402,7 +442,7 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                       textAlign: TextAlign.center,
                     ),
                   Text(
-                    "${track.artistName} • ${track.albumName}",
+                    "Yo - ${track.artistName}",
                     style: TextStyle(
                       fontSize: 14,
                       color: theme.colorScheme.onSurfaceVariant,

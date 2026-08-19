@@ -160,7 +160,47 @@ class MainScreen extends StatelessWidget {
         popularTracks: viewModel.popularTracks,
         owners: viewModel.owners,
         currentPlayingTrackId: viewModel.playerEngine.playerState.currentTrack?.id,
-        onSelectAlbum: viewModel.selectAlbum,
+        onSelectAlbum: (album) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (ctx) => Scaffold(
+                body: SafeArea(
+                  child: Consumer<MusicViewModel>(
+                    builder: (context, mvm, child) {
+                      final albumTracks = mvm.tracks.where((t) => t.albumId == album.id).toList();
+                      return AlbumDetailScreen(
+                        album: album,
+                        tracks: albumTracks,
+                        currentPlayingTrackId: mvm.playerEngine.playerState.currentTrack?.id,
+                        onBack: () => Navigator.pop(ctx),
+                        onPlayTrack: (track, playlistCtx) => mvm.playTrack(track, playlistContext: playlistCtx),
+                        onPlayAll: () {
+                          if (albumTracks.isNotEmpty) {
+                            mvm.playTrack(albumTracks.first, playlistContext: albumTracks);
+                          }
+                        },
+                        onDownloadAlbum: () {},
+                        onToggleDownload: mvm.toggleDownload,
+                        onToggleFavorite: mvm.toggleFavorite,
+                        onAddToPlaylist: (track) {
+                          showAddToPlaylistDialog(
+                            context,
+                            track,
+                            mvm.playlists,
+                            mvm.addTrackToPlaylist,
+                            () => showCreatePlaylistDialog(context, mvm.createPlaylist),
+                          );
+                        },
+                        onShare: (track) => showShareDialog(context, track),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
         onPlayTrack: (track, ctx) => viewModel.playTrack(track, playlistContext: ctx),
         onToggleDownload: viewModel.toggleDownload,
         onToggleFavorite: viewModel.toggleFavorite,
