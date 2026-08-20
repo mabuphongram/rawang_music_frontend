@@ -89,17 +89,13 @@ class ChatViewModel extends ChangeNotifier {
   Future<void> sendMessage(
     String senderName,
     String messageText,
-    String? trackId,
-    String? trackTitle,
   ) async {
-    if (messageText.trim().isEmpty && trackId == null) return;
+    if (messageText.trim().isEmpty) return;
 
     final newMessage = ChatMessageEntity(
       id: "msg_user_${DateTime.now().millisecondsSinceEpoch}",
       senderName: senderName.isEmpty ? "User" : senderName,
       message: messageText,
-      attachedTrackId: trackId,
-      attachedTrackTitle: trackTitle,
       isUser: false,
     );
 

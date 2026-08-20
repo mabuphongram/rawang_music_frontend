@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
 import 'package:rawang_melodies/data/remote/api_service.dart';
 import 'package:rawang_melodies/ui/components/album_card.dart';
@@ -92,19 +93,60 @@ class HomeScreen extends StatelessWidget {
                       letterSpacing: 1,
                     ),
                   ),
-                  Text(
-                    "Preserving Our Ancestral Echoes",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
+                  SizedBox(
+                    width: double.infinity,
+                    child: AnimatedTextKit(
+                      repeatForever: true,
+                      animatedTexts: [
+                        ColorizeAnimatedText(
+                          "Preserving Our Ancestral Echoes",
+                          speed: const Duration(milliseconds: 500),
+                          textStyle: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          colors: [
+                            theme.colorScheme.onSurface, // White
+                            // theme.colorScheme.primary, // Green
+                            const Color.fromARGB(204, 51, 170, 3),
+                            Colors.tealAccent,
+                            // theme.colorScheme.onSurface,
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  Text(
-                    "Stream, download offline, and discover traditional songs.",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 36, // Reserve space for 2 lines to prevent vertical jumping
+                    child: AnimatedTextKit(
+                      repeatForever: true,
+                      animatedTexts: [
+                        TyperAnimatedText(
+                          "Stream, download offline, and discover traditional songs.",
+                          speed: const Duration(milliseconds: 90),
+                          textStyle: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                          ),
+                        ),
+                        TyperAnimatedText(
+                          "Shvngbe sv̀ng Pàmvrà",
+                          speed: const Duration(milliseconds: 90),
+                          textStyle: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                          ),
+                        ),
+                        TyperAnimatedText(
+                          "Mvkúnrì ayv́ng hapshì lúnshìe",
+                          speed: const Duration(milliseconds: 90),
+                          textStyle: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

@@ -320,14 +320,8 @@ class MainScreen extends StatelessWidget {
       // AppTab.chat (index 4)
       CommunityChatScreen(
         messages: chatViewModel.messages,
-        allTracks: viewModel.tracks,
-        currentPlayingTrack: viewModel.playerEngine.playerState.currentTrack,
         onSendMessage: chatViewModel.sendMessage,
         onLoadMore: chatViewModel.loadMoreMessages,
-        onPlayTrackById: (trackId) {
-          final track = viewModel.tracks.firstWhere((t) => t.id == trackId);
-          viewModel.playTrack(track, playlistContext: [track]);
-        },
       ),
     ];
   }

@@ -5,19 +5,13 @@ import 'package:rawang_melodies/data/local/entity/entities.dart';
 
 class CommunityChatScreen extends StatefulWidget {
   final List<ChatMessageEntity> messages;
-  final List<TrackEntity> allTracks;
-  final TrackEntity? currentPlayingTrack;
-  final void Function(String senderName, String messageText, String? trackId, String? trackTitle) onSendMessage;
-  final void Function(String) onPlayTrackById;
+  final void Function(String senderName, String messageText) onSendMessage;
   final Future<void> Function() onLoadMore;
 
   const CommunityChatScreen({
     super.key,
     required this.messages,
-    required this.allTracks,
-    this.currentPlayingTrack,
     required this.onSendMessage,
-    required this.onPlayTrackById,
     required this.onLoadMore,
   });
 
@@ -28,7 +22,6 @@ class CommunityChatScreen extends StatefulWidget {
 class _CommunityChatScreenState extends State<CommunityChatScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
-  bool _attachCurrentTrack = false;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -107,14 +100,14 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onBackground,
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                   Text(
                     "Dvmv́nrà",
                     style: TextStyle(
                       fontSize: 11,
-                      color: theme.colorScheme.onBackground.withOpacity(0.7),
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                 ],
@@ -135,155 +128,93 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                 final msg = widget.messages[index];
                 final isUser = msg.senderName == _nameController.text.trim();
 
-              return Column(
-                crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                    child: Text(
-                      "${msg.senderName} • ${_formatTimestamp(msg.timestamp)}",
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.85),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isUser ? theme.colorScheme.primary : theme.colorScheme.surfaceVariant,
-                      borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(16),
-                        topRight: const Radius.circular(16),
-                        bottomLeft: Radius.circular(isUser ? 16 : 4),
-                        bottomRight: Radius.circular(isUser ? 4 : 16),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          msg.message,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isUser ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant,
-                          ),
+                return Column(
+                  crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      child: Text(
+                        "${msg.senderName} • ${_formatTimestamp(msg.timestamp)}",
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
-                        if (msg.attachedTrackTitle != null && msg.attachedTrackTitle!.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          GestureDetector(
-                            onTap: () {
-                              if (msg.attachedTrackId != null) {
-                                widget.onPlayTrackById(msg.attachedTrackId!);
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: isUser
-                                    ? theme.colorScheme.onPrimary.withOpacity(0.2)
-                                    : theme.colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.music_note,
-                                    color: isUser ? theme.colorScheme.onPrimary : theme.colorScheme.primary,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(
-                                      msg.attachedTrackTitle!,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: isUser ? theme.colorScheme.onPrimary : theme.colorScheme.onPrimaryContainer,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Icon(
-                                    Icons.play_arrow,
-                                    color: isUser ? theme.colorScheme.onPrimary : theme.colorScheme.primary,
-                                    size: 16,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                      ),
                     ),
-                  ),
-                ],
-              );
-            },
+                    Container(
+                      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.85),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isUser ? theme.colorScheme.primary : theme.colorScheme.surfaceVariant,
+                        borderRadius: BorderRadius.only(
+                          topLeft: const Radius.circular(16),
+                          topRight: const Radius.circular(16),
+                          bottomLeft: Radius.circular(isUser ? 16 : 4),
+                          bottomRight: Radius.circular(isUser ? 4 : 16),
+                        ),
+                      ),
+                      child: Text(
+                        msg.message,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isUser ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
         ),
-      ),
-      const SizedBox(height: 8),
-        if (widget.currentPlayingTrack != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16).copyWith(bottom: 6),
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _attachCurrentTrack = !_attachCurrentTrack;
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16).copyWith(bottom: 90),
+          child: Column(
+            children: [
+              // Redesigned User Name Input
+              Container(
                 decoration: BoxDecoration(
-                  color: _attachCurrentTrack ? theme.colorScheme.secondaryContainer : theme.colorScheme.surfaceVariant,
-                  borderRadius: BorderRadius.circular(10),
+                  color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
                 ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 child: Row(
                   children: [
                     Icon(
-                      Icons.music_note,
+                      Icons.person_pin,
                       color: theme.colorScheme.primary,
-                      size: 16,
+                      size: 20,
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        _attachCurrentTrack
-                            ? "Attached: ${widget.currentPlayingTrack!.title}"
-                            : "Tap to attach current song: ${widget.currentPlayingTrack!.title}",
+                      child: TextField(
+                        controller: _nameController,
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: theme.colorScheme.onSurface,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        decoration: InputDecoration(
+                          hintText: "Enter your display name",
+                          hintStyle: TextStyle(
+                            color: theme.colorScheme.onSurface.withOpacity(0.4),
+                            fontWeight: FontWeight.normal,
+                          ),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                          filled: false,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-          ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16).copyWith(bottom: 90),
-          child: Column(
-            children: [
-              TextField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  hintText: "Your Name (e.g., Ah Dang)",
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  isDense: true,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
@@ -291,8 +222,13 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                       controller: _messageController,
                       decoration: InputDecoration(
                         hintText: "Type message to Rawang people...",
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceVariant,
                       ),
                       onSubmitted: (_) => _sendMessage(),
                     ),
@@ -301,13 +237,13 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                   GestureDetector(
                     onTap: _sendMessage,
                     child: Container(
-                      width: 50,
-                      height: 50,
+                      width: 48,
+                      height: 48,
                       decoration: BoxDecoration(
                         color: theme.colorScheme.primary,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.send, color: theme.colorScheme.onPrimary),
+                      child: Icon(Icons.send, color: theme.colorScheme.onPrimary, size: 20),
                     ),
                   ),
                 ],
@@ -325,26 +261,20 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
 
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your name first.')),
+        SnackBar(
+          content: const Text('Please enter your display name first.'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
       );
       return;
     }
 
     if (message.isNotEmpty) {
-      // Save name to preferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('chat_user_name', name);
 
-      widget.onSendMessage(
-        name,
-        message,
-        _attachCurrentTrack ? widget.currentPlayingTrack?.id : null,
-        _attachCurrentTrack ? widget.currentPlayingTrack?.title : null,
-      );
+      widget.onSendMessage(name, message);
       _messageController.clear();
-      setState(() {
-        _attachCurrentTrack = false;
-      });
     }
   }
 }

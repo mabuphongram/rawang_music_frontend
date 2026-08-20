@@ -261,8 +261,6 @@ class ChatMessageEntity {
   final String senderName;
   final String message;
   final int timestamp;
-  final String? attachedTrackId;
-  final String? attachedTrackTitle;
   final bool isUser;
 
   ChatMessageEntity({
@@ -270,8 +268,6 @@ class ChatMessageEntity {
     required this.senderName,
     required this.message,
     int? timestamp,
-    this.attachedTrackId,
-    this.attachedTrackTitle,
     this.isUser = false,
   }) : timestamp = timestamp ?? DateTime.now().millisecondsSinceEpoch;
 
@@ -281,8 +277,6 @@ class ChatMessageEntity {
       senderName: map['senderName'],
       message: map['message'],
       timestamp: map['timestamp'],
-      attachedTrackId: map['attachedTrackId'],
-      attachedTrackTitle: map['attachedTrackTitle'],
       isUser: map['isUser'] == 1,
     );
   }
@@ -293,8 +287,6 @@ class ChatMessageEntity {
       'senderName': senderName,
       'message': message,
       'timestamp': timestamp,
-      'attachedTrackId': attachedTrackId,
-      'attachedTrackTitle': attachedTrackTitle,
       'isUser': isUser ? 1 : 0,
     };
   }
