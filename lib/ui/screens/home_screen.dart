@@ -237,9 +237,11 @@ class HomeScreen extends StatelessWidget {
               separatorBuilder: (_, index) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
                 final album = albums[index];
+                final count = tracks.where((t) => t.albumId == album.id).length;
                 return AlbumCard(
                   width: 160,
                   album: album,
+                  trackCount: count,
                   onClick: () => onSelectAlbum(album),
                 );
               },
@@ -252,7 +254,7 @@ class HomeScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              "Popular Traditional Songs",
+              "Popular Songs",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,

@@ -166,7 +166,7 @@ class AlbumDetailScreen extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: onDownloadAlbum,
                       icon: const Icon(Icons.download),
-                      label: const Text("Download All"),
+                      label: const Text("Upload a song"),
                       style: OutlinedButton.styleFrom(
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),

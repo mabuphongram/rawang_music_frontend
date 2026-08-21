@@ -6,12 +6,14 @@ class AlbumCard extends StatelessWidget {
   final AlbumEntity album;
   final VoidCallback onClick;
   final double? width;
+  final int? trackCount; // optional override; falls back to album.trackCount
 
   const AlbumCard({
     super.key,
     required this.album,
     required this.onClick,
     this.width,
+    this.trackCount,
   });
 
   @override
@@ -81,7 +83,7 @@ class AlbumCard extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                "${album.ownerName} • ${album.trackCount} ${album.trackCount == 1 ? 'track' : 'tracks'}",
+                "${album.ownerName} • ${trackCount ?? album.trackCount} ${(trackCount ?? album.trackCount) == 1 ? 'track' : 'tracks'}",
                 style: TextStyle(
                   fontSize: 12,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,

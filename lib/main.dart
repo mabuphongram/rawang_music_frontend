@@ -165,53 +165,40 @@ class MainScreen extends StatelessWidget {
   List<Widget> _buildAllScreens(BuildContext context, MusicViewModel viewModel, ChatViewModel chatViewModel) {
     return [
       // AppTab.home (index 0)
-      HomeScreen(
+      viewModel.homeSelectedAlbum != null
+          ? AlbumDetailScreen(
+              album: viewModel.homeSelectedAlbum!,
+              tracks: viewModel.tracks.where((t) => t.albumId == viewModel.homeSelectedAlbum!.id).toList(),
+              currentPlayingTrackId: viewModel.playerEngine.playerState.currentTrack?.id,
+              onBack: () => viewModel.selectHomeAlbum(null),
+              onPlayTrack: (track, ctx) => viewModel.playTrack(track, playlistContext: ctx),
+              onPlayAll: () {
+                final albumTracks = viewModel.tracks.where((t) => t.albumId == viewModel.homeSelectedAlbum!.id).toList();
+                if (albumTracks.isNotEmpty) {
+                  viewModel.playTrack(albumTracks.first, playlistContext: albumTracks);
+                }
+              },
+              onDownloadAlbum: () {},
+              onToggleDownload: viewModel.toggleDownload,
+              onToggleFavorite: viewModel.toggleFavorite,
+              onAddToPlaylist: (track) {
+                showAddToPlaylistDialog(
+                  context,
+                  track,
+                  viewModel.playlists,
+                  viewModel.addTrackToPlaylist,
+                  () => showCreatePlaylistDialog(context, viewModel.createPlaylist),
+                );
+              },
+              onShare: (track) => showShareDialog(context, track),
+            )
+          : HomeScreen(
         albums: viewModel.albums,
         tracks: viewModel.tracks,
         popularTracks: viewModel.popularTracks,
         owners: viewModel.owners,
         currentPlayingTrackId: viewModel.playerEngine.playerState.currentTrack?.id,
-        onSelectAlbum: (album) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (ctx) => Scaffold(
-                body: SafeArea(
-                  child: Consumer<MusicViewModel>(
-                    builder: (context, mvm, child) {
-                      final albumTracks = mvm.tracks.where((t) => t.albumId == album.id).toList();
-                      return AlbumDetailScreen(
-                        album: album,
-                        tracks: albumTracks,
-                        currentPlayingTrackId: mvm.playerEngine.playerState.currentTrack?.id,
-                        onBack: () => Navigator.pop(ctx),
-                        onPlayTrack: (track, playlistCtx) => mvm.playTrack(track, playlistContext: playlistCtx),
-                        onPlayAll: () {
-                          if (albumTracks.isNotEmpty) {
-                            mvm.playTrack(albumTracks.first, playlistContext: albumTracks);
-                          }
-                        },
-                        onDownloadAlbum: () {},
-                        onToggleDownload: mvm.toggleDownload,
-                        onToggleFavorite: mvm.toggleFavorite,
-                        onAddToPlaylist: (track) {
-                          showAddToPlaylistDialog(
-                            context,
-                            track,
-                            mvm.playlists,
-                            mvm.addTrackToPlaylist,
-                            () => showCreatePlaylistDialog(context, mvm.createPlaylist),
-                          );
-                        },
-                        onShare: (track) => showShareDialog(context, track),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
+        onSelectAlbum: (album) => viewModel.selectHomeAlbum(album),
         onPlayTrack: (track, ctx) => viewModel.playTrack(track, playlistContext: ctx),
         onToggleDownload: viewModel.toggleDownload,
         onToggleFavorite: viewModel.toggleFavorite,

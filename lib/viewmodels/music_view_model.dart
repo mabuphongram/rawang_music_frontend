@@ -17,6 +17,7 @@ class MusicViewModel extends ChangeNotifier {
   String selectedOwnerFilter = "ALL";
   String? selectedOwnerName; // when set, filter by exact owner name
   AlbumEntity? selectedAlbum;
+  AlbumEntity? homeSelectedAlbum;
   PlaylistEntity? selectedPlaylist;
   bool isAddSongDialogOpen = false;
   bool isCreatePlaylistDialogOpen = false;
@@ -188,6 +189,11 @@ class MusicViewModel extends ChangeNotifier {
 
   void selectAlbum(AlbumEntity? album) {
     selectedAlbum = album;
+    notifyListeners();
+  }
+
+  void selectHomeAlbum(AlbumEntity? album) {
+    homeSelectedAlbum = album;
     notifyListeners();
   }
 
