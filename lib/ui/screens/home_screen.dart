@@ -229,7 +229,7 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           SizedBox(
-            height: 230,
+            height: 250,
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               scrollDirection: Axis.horizontal,

@@ -90,7 +90,7 @@ class AlbumsScreen extends StatelessWidget {
                       crossAxisCount: 2,
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
-                      childAspectRatio: 0.75,
+                      childAspectRatio: 0.70,
                     ),
                     itemCount: albums.length,
                     itemBuilder: (context, index) {

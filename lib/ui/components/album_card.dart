@@ -83,13 +83,44 @@ class AlbumCard extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                "${album.ownerName} • ${trackCount ?? album.trackCount} ${(trackCount ?? album.trackCount) == 1 ? 'track' : 'tracks'}",
+                album.ownerName,
                 style: TextStyle(
                   fontSize: 12,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.music_note,
+                          size: 11,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          "${trackCount ?? album.trackCount} ${(trackCount ?? album.trackCount) == 1 ? 'track' : 'tracks'}",
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
