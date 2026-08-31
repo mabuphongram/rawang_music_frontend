@@ -12,6 +12,7 @@ import 'package:rawang_melodies/ui/screens/home_screen.dart';
 import 'package:rawang_melodies/ui/screens/offline_screen.dart';
 import 'package:rawang_melodies/ui/screens/owners_screen.dart';
 import 'package:rawang_melodies/ui/screens/playlists_screen.dart';
+import 'package:rawang_melodies/ui/screens/splash_screen.dart';
 import 'package:rawang_melodies/ui/theme.dart';
 import 'package:rawang_melodies/viewmodels/chat_view_model.dart';
 import 'package:rawang_melodies/viewmodels/music_view_model.dart';
@@ -43,7 +44,7 @@ class RawangMusicApp extends StatelessWidget {
       title: 'Rawang Melodies',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      home: const MainScreen(),
+      home: const SplashScreen(nextScreen: MainScreen()),
       debugShowCheckedModeBanner: false,
     );
   }

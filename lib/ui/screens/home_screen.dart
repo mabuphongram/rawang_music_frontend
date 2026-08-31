@@ -154,6 +154,7 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
 
+          SizedBox(height: 15,),
 
           // Browse by Owner – avatar row
           Padding(
@@ -183,20 +184,24 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 7      ),
 
           SizedBox(
-            height: 100,
+            height: 120,
             child: owners.isEmpty
                 ? const Center(child: Text('Loading owners...', style: TextStyle(fontSize: 12)))
                 : ListView(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical:8
+                    ),
+                    clipBehavior: Clip.none,
                     children: _buildOwnerAvatars(context),
                   ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
 
 
           // Featured Albums Carousel
@@ -316,9 +321,9 @@ class HomeScreen extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.35),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
                       ),
                     ],
                   ),
