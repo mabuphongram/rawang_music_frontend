@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
 import 'package:rawang_melodies/data/remote/api_service.dart';
@@ -79,30 +80,27 @@ class AlbumDetailScreen extends StatelessWidget {
                                 child: Icon(Icons.album, size: 40, color: Colors.white54),
                               ),
                             )
-                          : Image.network(
-                              imageUrl,
+                          : CachedNetworkImage(
+                              imageUrl: imageUrl,
                               width: 110,
                               height: 110,
                               fit: BoxFit.cover,
-                              loadingBuilder: (context, child, progress) {
-                                if (progress == null) return child;
-                                return Container(
-                                  width: 110,
-                                  height: 110,
-                                  color: Colors.grey.shade800,
-                                  child: const Center(child: CircularProgressIndicator()),
-                                );
-                              },
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  width: 110,
-                                  height: 110,
-                                  color: Colors.grey.shade800,
-                                  child: const Center(
-                                    child: Icon(Icons.album, size: 40, color: Colors.white54),
-                                  ),
-                                );
-                              },
+                              memCacheWidth: 220,
+                              placeholder: (context, url) => Container(
+                                width: 110,
+                                height: 110,
+                                color: Colors.grey.shade800,
+                                child: const Center(child: CircularProgressIndicator()),
+                              ),
+                              errorWidget: (context, url, error) => Container(
+                                width: 110,
+                                height: 110,
+                                color: Colors.grey.shade800,
+                                child: const Center(
+                                  child: Icon(Icons.album, size: 40, color: Colors.white54),
+                                ),
+                              ),
+                              fadeInDuration: const Duration(milliseconds: 200),
                             ),
                     );
                   }),

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
@@ -330,17 +331,16 @@ class HomeScreen extends StatelessWidget {
                   child: ClipOval(
                     child: avatarUrl.isEmpty
                         ? _buildInitials(theme, owner.name, isSinger)
-                        : Image.network(
-                            avatarUrl,
+                        : CachedNetworkImage(
+                            imageUrl: avatarUrl,
                             width: 60,
                             height: 60,
                             fit: BoxFit.cover,
-                            loadingBuilder: (context, child, progress) {
-                              if (progress == null) return child;
-                              return _buildLoadingCircle(theme);
-                            },
-                            errorBuilder: (context, error, stack) =>
+                            memCacheWidth: 120,
+                            placeholder: (context, url) => _buildLoadingCircle(theme),
+                            errorWidget: (context, url, error) =>
                                 _buildInitials(theme, owner.name, isSinger),
+                            fadeInDuration: const Duration(milliseconds: 200),
                           ),
                   ),
                 ),

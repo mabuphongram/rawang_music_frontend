@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
 import 'package:rawang_melodies/data/remote/api_service.dart';
@@ -50,22 +51,19 @@ class AlbumCard extends StatelessWidget {
                         child: Icon(Icons.album, size: 48, color: Theme.of(context).colorScheme.onSecondaryContainer.withOpacity(0.5)),
                       );
                     }
-                    return Image.network(
-                      imageUrl,
+                    return CachedNetworkImage(
+                      imageUrl: imageUrl,
                       fit: BoxFit.cover,
-                      loadingBuilder: (context, child, progress) {
-                        if (progress == null) return child;
-                        return Container(
-                          color: Theme.of(context).colorScheme.secondaryContainer,
-                          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Theme.of(context).colorScheme.secondaryContainer,
-                          child: Icon(Icons.album, size: 48, color: Theme.of(context).colorScheme.onSecondaryContainer.withOpacity(0.5)),
-                        );
-                      },
+                      memCacheWidth: 400,
+                      placeholder: (context, url) => Container(
+                        color: Theme.of(context).colorScheme.secondaryContainer,
+                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Theme.of(context).colorScheme.secondaryContainer,
+                        child: Icon(Icons.album, size: 48, color: Theme.of(context).colorScheme.onSecondaryContainer.withOpacity(0.5)),
+                      ),
+                      fadeInDuration: const Duration(milliseconds: 200),
                     );
                   }),
                 ),

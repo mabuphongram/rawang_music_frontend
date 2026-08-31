@@ -4,12 +4,45 @@ enum OwnerType {
   anonymous
 }
 
+class SocialLinks {
+  final String youtube;
+  final String facebook;
+  final String tiktok;
+
+  const SocialLinks({
+    this.youtube = '',
+    this.facebook = '',
+    this.tiktok = '',
+  });
+
+  factory SocialLinks.fromMap(Map<String, dynamic>? map) {
+    if (map == null) return const SocialLinks();
+    return SocialLinks(
+      youtube: (map['youtube'] ?? '').toString(),
+      facebook: (map['facebook'] ?? '').toString(),
+      tiktok: (map['tiktok'] ?? '').toString(),
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+        'youtube': youtube,
+        'facebook': facebook,
+        'tiktok': tiktok,
+      };
+
+  bool get hasAny => youtube.isNotEmpty || facebook.isNotEmpty || tiktok.isNotEmpty;
+}
+
 class OwnerEntity {
   final String id;
   final String name;
   final String avatarUrl; // relative path stored in MongoDB, resolved at runtime
   final String description;
   final String ownerType; // 'singer' or 'organization'
+  final String phone;
+  final SocialLinks socialLinks;
+  final int albumCount;
+  final int trackCount;
 
   OwnerEntity({
     required this.id,
@@ -17,17 +50,54 @@ class OwnerEntity {
     required this.avatarUrl,
     required this.description,
     required this.ownerType,
+    this.phone = '',
+    this.socialLinks = const SocialLinks(),
+    this.albumCount = 0,
+    this.trackCount = 0,
   });
 
   factory OwnerEntity.fromMap(Map<String, dynamic> map, {required String ownerType}) {
+    // Backend may return socialLinks as nested object or flat fields; handle both.
+    SocialLinks links;
+    if (map['socialLinks'] is Map) {
+      links = SocialLinks.fromMap((map['socialLinks'] as Map).cast<String, dynamic>());
+    } else {
+      links = SocialLinks(
+        youtube: (map['youtube'] ?? '').toString(),
+        facebook: (map['facebook'] ?? '').toString(),
+        tiktok: (map['tiktok'] ?? '').toString(),
+      );
+    }
     return OwnerEntity(
-      id: map['id'] ?? '',
-      name: map['name'] ?? '',
-      avatarUrl: map['avatarUrl'] ?? '',
-      description: map['description'] ?? '',
-      ownerType: ownerType,
+      id: (map['id'] ?? map['_id'] ?? '').toString(),
+      name: (map['name'] ?? '').toString(),
+      avatarUrl: (map['avatarUrl'] ?? '').toString(),
+      description: (map['description'] ?? '').toString(),
+      ownerType: (map['ownerType'] ?? ownerType).toString(),
+      phone: (map['phone'] ?? '').toString(),
+      socialLinks: links,
+      albumCount: map['albumCount'] is int
+          ? map['albumCount'] as int
+          : int.tryParse((map['albumCount'] ?? '0').toString()) ?? 0,
+      trackCount: map['trackCount'] is int
+          ? map['trackCount'] as int
+          : int.tryParse((map['trackCount'] ?? '0').toString()) ?? 0,
     );
   }
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'name': name,
+        'avatarUrl': avatarUrl,
+        'description': description,
+        'ownerType': ownerType,
+        'phone': phone,
+        'youtube': socialLinks.youtube,
+        'facebook': socialLinks.facebook,
+        'tiktok': socialLinks.tiktok,
+        'albumCount': albumCount,
+        'trackCount': trackCount,
+      };
 }
 
 class AlbumEntity {

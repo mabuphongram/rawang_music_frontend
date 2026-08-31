@@ -6,7 +6,7 @@ import 'package:rawang_melodies/data/remote/api_service.dart';
 
 class DatabaseHelper {
   static const _databaseName = "rawang_database.db";
-  static const _databaseVersion = 4;
+  static const _databaseVersion = 5;
 
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
@@ -57,6 +57,31 @@ class DatabaseHelper {
           ownerType TEXT
         )
       ''');
+    }
+
+    if (oldVersion < 5) {
+      // v4 -> v5: add phone / socialLinks / stats columns for Image 1 design
+      // Use ALTER TABLE with safe IF NOT EXISTS via try-catch for downgrade robustness.
+      final cols = await db.rawQuery("PRAGMA table_info(owners)");
+      final existing = cols.map((c) => c['name'] as String).toSet();
+      if (!existing.contains('phone')) {
+        await db.execute('ALTER TABLE owners ADD COLUMN phone TEXT DEFAULT ""');
+      }
+      if (!existing.contains('youtube')) {
+        await db.execute('ALTER TABLE owners ADD COLUMN youtube TEXT DEFAULT ""');
+      }
+      if (!existing.contains('facebook')) {
+        await db.execute('ALTER TABLE owners ADD COLUMN facebook TEXT DEFAULT ""');
+      }
+      if (!existing.contains('tiktok')) {
+        await db.execute('ALTER TABLE owners ADD COLUMN tiktok TEXT DEFAULT ""');
+      }
+      if (!existing.contains('albumCount')) {
+        await db.execute('ALTER TABLE owners ADD COLUMN albumCount INTEGER DEFAULT 0');
+      }
+      if (!existing.contains('trackCount')) {
+        await db.execute('ALTER TABLE owners ADD COLUMN trackCount INTEGER DEFAULT 0');
+      }
     }
   }
 
@@ -131,7 +156,13 @@ class DatabaseHelper {
         name TEXT,
         avatarUrl TEXT,
         description TEXT,
-        ownerType TEXT
+        ownerType TEXT,
+        phone TEXT DEFAULT "",
+        youtube TEXT DEFAULT "",
+        facebook TEXT DEFAULT "",
+        tiktok TEXT DEFAULT "",
+        albumCount INTEGER DEFAULT 0,
+        trackCount INTEGER DEFAULT 0
       )
     ''');
 
@@ -179,6 +210,12 @@ class DatabaseHelper {
           'avatarUrl': owner.avatarUrl,
           'description': owner.description,
           'ownerType': owner.ownerType,
+          'phone': owner.phone,
+          'youtube': owner.socialLinks.youtube,
+          'facebook': owner.socialLinks.facebook,
+          'tiktok': owner.socialLinks.tiktok,
+          'albumCount': owner.albumCount,
+          'trackCount': owner.trackCount,
         }, conflictAlgorithm: ConflictAlgorithm.replace);
       }
       for (var playlist in apiPlaylists) {
@@ -236,7 +273,19 @@ class DatabaseHelper {
   Future<List<OwnerEntity>> getAllOwners() async {
     final db = await database;
     final maps = await db.query('owners');
-    return maps.map((e) => OwnerEntity.fromMap(e, ownerType: e['ownerType'] as String)).toList();
+    return maps.map((e) {
+      // Merge flat social columns into nested map for fromMap
+      final m = Map<String, dynamic>.from(e);
+      // Ensure socialLinks object exists for fromMap fallback
+      if (m['youtube'] != null || m['facebook'] != null || m['tiktok'] != null) {
+        m['socialLinks'] = {
+          'youtube': m['youtube'] ?? '',
+          'facebook': m['facebook'] ?? '',
+          'tiktok': m['tiktok'] ?? '',
+        };
+      }
+      return OwnerEntity.fromMap(m, ownerType: e['ownerType'] as String);
+    }).toList();
   }
 
   Future<List<TrackEntity>> getAllTracks() async {

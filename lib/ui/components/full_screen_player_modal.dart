@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:rawang_melodies/player/audio_player_engine.dart';
 import 'package:rawang_melodies/data/remote/api_service.dart';
@@ -288,17 +289,11 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                           ? ApiService.resolveMediaUrl(widget.albumCoverImage!)
                           : '';
                           
-                      DecorationImage? decorationImage;
+                      ImageProvider decorationImageProvider;
                       if (imageUrl.isNotEmpty) {
-                        decorationImage = DecorationImage(
-                          image: NetworkImage(imageUrl),
-                          fit: BoxFit.cover,
-                        );
+                        decorationImageProvider = CachedNetworkImageProvider(imageUrl);
                       } else {
-                        decorationImage = const DecorationImage(
-                          image: AssetImage('assets/images/img_rawang_hero_1785383680261.jpg'),
-                          fit: BoxFit.cover,
-                        );
+                        decorationImageProvider = const AssetImage('assets/images/img_rawang_hero_1785383680261.jpg');
                       }
                       
                       return Stack(
@@ -354,13 +349,16 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                                     ),
                                     margin: const EdgeInsets.all(44),
                                   ),
-                                  // Center Album Art Label
+                                  // Center Album Art Label - cached via CachedNetworkImageProvider
                                   Container(
                                     width: constraints.maxWidth * 0.28,
                                     height: constraints.maxWidth * 0.28,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      image: decorationImage,
+                                      image: DecorationImage(
+                                        image: decorationImageProvider,
+                                        fit: BoxFit.cover,
+                                      ),
                                       border: Border.all(color: Colors.black, width: 4),
                                     ),
                                   ),

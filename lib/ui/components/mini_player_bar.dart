@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:rawang_melodies/player/audio_player_engine.dart';
 import 'package:rawang_melodies/data/remote/api_service.dart';
@@ -67,14 +68,15 @@ class MiniPlayerBar extends StatelessWidget {
                               ? ApiService.resolveMediaUrl(albumCoverImage!)
                               : '';
                           if (imageUrl.isNotEmpty) {
-                            return Image.network(
-                              imageUrl,
+                            return CachedNetworkImage(
+                              imageUrl: imageUrl,
                               width: 44,
                               height: 44,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(width: 44, height: 44, color: Colors.grey, child: const Icon(Icons.album));
-                              },
+                              memCacheWidth: 88,
+                              placeholder: (context, url) => Container(width: 44, height: 44, color: Colors.grey.shade300, child: const Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)))),
+                              errorWidget: (context, url, error) => Container(width: 44, height: 44, color: Colors.grey, child: const Icon(Icons.album)),
+                              fadeInDuration: const Duration(milliseconds: 200),
                             );
                           } else {
                             return Image.asset(
