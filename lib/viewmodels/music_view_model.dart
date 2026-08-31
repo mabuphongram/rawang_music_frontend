@@ -67,8 +67,10 @@ class MusicViewModel extends ChangeNotifier {
 
   List<TrackEntity> selectedPlaylistTracks = [];
 
+  late Future<void> initializationDone;
+
   MusicViewModel(this.playerEngine) {
-    _loadData();
+    initializationDone = _loadData();
     playerEngine.addListener(() {
       notifyListeners();
     });
@@ -76,6 +78,12 @@ class MusicViewModel extends ChangeNotifier {
     playerEngine.onTrackCompleted = (track) {
       ApiService.incrementPlayCount(track.id);
     };
+  }
+
+  /// Retry sync after offline/retry from splash screen
+  Future<void> retryInitialization() {
+    initializationDone = _loadData();
+    return initializationDone;
   }
 
   Future<void> _loadData() async {
