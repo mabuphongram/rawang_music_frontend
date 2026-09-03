@@ -65,41 +65,17 @@ class TrackListItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          track.title,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: isPlayingCurrentTrack 
-                                ? theme.colorScheme.primary 
-                                : theme.colorScheme.onSurface,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (track.hasKaraoke) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.tertiaryContainer,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            "🎤 Karaoke",
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.onTertiaryContainer,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
+                  Text(
+                    track.title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: isPlayingCurrentTrack 
+                          ? theme.colorScheme.primary 
+                          : theme.colorScheme.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   if (track.rawangTitle.isNotEmpty)
                     Text(
@@ -124,6 +100,23 @@ class TrackListItem extends StatelessWidget {
                 ],
               ),
             ),
+            if (track.hasKaraoke)
+              Container(
+                margin: const EdgeInsets.only(left: 8, right: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.tertiaryContainer,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: Text(
+                  "🎤 Karaoke",
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onTertiaryContainer,
+                  ),
+                ),
+              ),
             IconButton(
               icon: Icon(
                 track.isDownloaded ? Icons.download_done : Icons.download,
@@ -143,42 +136,6 @@ class TrackListItem extends StatelessWidget {
                 size: 20,
               ),
               onPressed: onToggleFavorite,
-            ),
-            PopupMenuButton<String>(
-              icon: Icon(
-                Icons.more_vert,
-                color: theme.colorScheme.onSurfaceVariant,
-                size: 20,
-              ),
-              onSelected: (value) {
-                if (value == 'playlist') {
-                  onAddToPlaylist();
-                } else if (value == 'share') {
-                  onShare();
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'playlist',
-                  child: Row(
-                    children: [
-                      Icon(Icons.playlist_add),
-                      SizedBox(width: 8),
-                      Text("Add to Playlist"),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'share',
-                  child: Row(
-                    children: [
-                      Icon(Icons.share),
-                      SizedBox(width: 8),
-                      Text("Share Song"),
-                    ],
-                  ),
-                ),
-              ],
             ),
           ],
         ),
