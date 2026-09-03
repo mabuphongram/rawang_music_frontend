@@ -243,23 +243,37 @@ class TrackEntity {
   }
 
   factory TrackEntity.fromMap(Map<String, dynamic> map) {
+    bool asBool(dynamic v) =>
+        v == 1 || v == true || v == '1' || v == 'true' || v == 'True';
+    int asInt(dynamic v) {
+      if (v == null) return 0;
+      if (v is int) return v;
+      if (v is double) return v.toInt();
+      return int.tryParse(v.toString()) ?? 0;
+    }
+
+    final rawKaraokeUrl = map['karaokeAudioUrl'];
+    final karaokeUrl = rawKaraokeUrl == null || rawKaraokeUrl.toString() == 'null'
+        ? null
+        : rawKaraokeUrl.toString();
+
     return TrackEntity(
-      id: map['id'],
-      albumId: map['albumId'],
-      title: map['title'],
-      rawangTitle: map['rawangTitle'],
-      artistName: map['artistName'],
-      albumName: map['albumName'],
-      ownerType: map['ownerType'],
-      durationSeconds: map['durationSeconds'],
-      audioUrl: map['audioUrl'],
-      lyrics: map['lyrics'],
-      genre: map['genre'],
-      isDownloaded: map['isDownloaded'] == 1,
-      isFavorite: map['isFavorite'] == 1,
-      playCount: map['playCount'],
-      hasKaraoke: map['hasKaraoke'] == 1,
-      karaokeAudioUrl: map['karaokeAudioUrl'],
+      id: (map['id'] ?? map['_id'] ?? '').toString(),
+      albumId: (map['albumId'] ?? '').toString(),
+      title: (map['title'] ?? '').toString(),
+      rawangTitle: (map['rawangTitle'] ?? '').toString(),
+      artistName: (map['artistName'] ?? '').toString(),
+      albumName: (map['albumName'] ?? '').toString(),
+      ownerType: (map['ownerType'] ?? '').toString(),
+      durationSeconds: asInt(map['durationSeconds']),
+      audioUrl: (map['audioUrl'] ?? '').toString(),
+      lyrics: (map['lyrics'] ?? '').toString(),
+      genre: (map['genre'] ?? '').toString(),
+      isDownloaded: asBool(map['isDownloaded']),
+      isFavorite: asBool(map['isFavorite']),
+      playCount: asInt(map['playCount']),
+      hasKaraoke: asBool(map['hasKaraoke']) || (karaokeUrl != null && karaokeUrl.trim().isNotEmpty),
+      karaokeAudioUrl: karaokeUrl,
     );
   }
 

@@ -424,6 +424,79 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                                 ),
                               ),
                             ),
+                          // Sing Karaoke button overlaying the rotating disk (static, not rotating)
+                          // Muted when karaoke is not available (no karaoke audio)
+                          Positioned(
+                            bottom: 6,
+                            child: Builder(
+                              builder: (context) {
+                                final bool hasKaraoke = track.hasKaraoke ||
+                                    (track.karaokeAudioUrl != null &&
+                                        track.karaokeAudioUrl!.trim().isNotEmpty);
+                                return Opacity(
+                                  opacity: hasKaraoke ? 1.0 : 0.45,
+                                  child: GestureDetector(
+                                    onTap: hasKaraoke ? widget.onToggleKaraokeMode : null,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                                      decoration: BoxDecoration(
+                                        color: hasKaraoke
+                                            ? (widget.playerState.isKaraokeMode
+                                                ? theme.colorScheme.tertiary
+                                                : theme.colorScheme.primary)
+                                            : Colors.grey.shade600,
+                                        borderRadius: BorderRadius.circular(20),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.35),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ],
+                                        border: Border.all(
+                                          color: hasKaraoke
+                                              ? Colors.white.withOpacity(0.9)
+                                              : Colors.white.withOpacity(0.35),
+                                          width: 1.2,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            widget.playerState.isKaraokeMode && hasKaraoke
+                                                ? Icons.mic
+                                                : Icons.mic_none,
+                                            size: 14,
+                                            color: hasKaraoke
+                                                ? (widget.playerState.isKaraokeMode
+                                                    ? theme.colorScheme.onTertiary
+                                                    : theme.colorScheme.onPrimary)
+                                                : Colors.white.withOpacity(0.6),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            widget.playerState.isKaraokeMode && hasKaraoke
+                                                ? "Karaoke ON"
+                                                : "Sing Karaoke",
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: hasKaraoke
+                                                  ? (widget.playerState.isKaraokeMode
+                                                      ? theme.colorScheme.onTertiary
+                                                      : theme.colorScheme.onPrimary)
+                                                  : Colors.white.withOpacity(0.6),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
                         ],
                       );
                     }
@@ -466,27 +539,6 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                   _buildLyricsQueue(theme, parsedLyrics, widget.playerState.currentPositionMs),
                   
                   const SizedBox(height: 16),
-                  
-                  // Karaoke Button
-                  ElevatedButton.icon(
-                    onPressed: widget.onToggleKaraokeMode,
-                    icon: Icon(widget.playerState.isKaraokeMode ? Icons.mic : Icons.mic_off, size: 18),
-                    label: Text(
-                      widget.playerState.isKaraokeMode 
-                          ? "Karaoke Mode: ON (Instrumental)" 
-                          : (track.hasKaraoke ? "Switch to Karaoke Version 🎤" : "Sing Karaoke"),
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: widget.playerState.isKaraokeMode ? theme.colorScheme.tertiary : theme.colorScheme.surfaceVariant,
-                      foregroundColor: widget.playerState.isKaraokeMode ? theme.colorScheme.onTertiary : theme.colorScheme.onSurfaceVariant,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 12),
                   SliderTheme(
                     data: SliderTheme.of(context).copyWith(
                       thumbColor: theme.colorScheme.primary,
