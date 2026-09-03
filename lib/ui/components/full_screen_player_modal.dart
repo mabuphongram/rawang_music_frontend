@@ -127,79 +127,116 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
     return result;
   }
 
-  int _findCurrentLineIndex(List<_LyricLine> lines, int currentPositionSec) {
-    final currentPos = Duration(seconds: currentPositionSec);
-    for (int i = lines.length - 1; i >= 0; i--) {
-      if (currentPos >= lines[i].time) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
-  Widget _buildLyricsQueue(ThemeData theme, List<_LyricLine> parsedLines, int currentIndex) {
+  Widget _buildLyricsQueue(ThemeData theme, List<_LyricLine> parsedLines, int currentPosMs) {
     if (parsedLines.isEmpty) {
       return Container(
-        height: 90,
+        height: 80,
         alignment: Alignment.center,
         child: Text(
           "Lyrics are not available for this song.",
           style: TextStyle(
-            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
+            color: Colors.white.withOpacity(0.5),
             fontStyle: FontStyle.italic,
           ),
         ),
       );
     }
 
-    String line1 = currentIndex > 0 ? parsedLines[currentIndex - 1].text : "";
-    String line2 = currentIndex >= 0 && currentIndex < parsedLines.length ? parsedLines[currentIndex].text : "";
-    String line3 = currentIndex >= -1 && currentIndex + 1 < parsedLines.length ? parsedLines[currentIndex + 1].text : "";
-
-    if (currentIndex == -1) {
-      line1 = "";
-      line2 = "";
-      line3 = parsedLines.isNotEmpty ? parsedLines[0].text : "";
+    // Find current line based on milliseconds
+    int currentIndex = -1;
+    for (int i = parsedLines.length - 1; i >= 0; i--) {
+      if (currentPosMs >= parsedLines[i].time.inMilliseconds) {
+        currentIndex = i;
+        break;
+      }
     }
 
-    return SizedBox(
-      height: 76,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    // Smooth continuous fraction progress between current line and next line
+    double fractionalProgress = 0.0;
+    if (currentIndex >= 0 && currentIndex < parsedLines.length - 1) {
+      final currentLineTime = parsedLines[currentIndex].time.inMilliseconds;
+      final nextLineTime = parsedLines[currentIndex + 1].time.inMilliseconds;
+      final interval = nextLineTime - currentLineTime;
+      if (interval > 0) {
+        final elapsed = currentPosMs - currentLineTime;
+        fractionalProgress = (elapsed / interval).clamp(0.0, 1.0);
+      }
+    } else if (currentIndex == -1 && parsedLines.isNotEmpty) {
+      final firstLineTime = parsedLines[0].time.inMilliseconds;
+      if (firstLineTime > 0) {
+        fractionalProgress = (currentPosMs / firstLineTime).clamp(0.0, 1.0);
+      }
+    }
+
+    // Continuous floating index
+    final double continuousIndex = (currentIndex < 0 ? -1.0 : currentIndex.toDouble()) + fractionalProgress;
+    const double lineHeight = 26.0;
+
+    return Container(
+      height: 78,
+      clipBehavior: Clip.hardEdge,
+      decoration: const BoxDecoration(),
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          Text(
-            line1,
-            style: TextStyle(
-              fontSize: 13,
-              fontStyle: FontStyle.italic,
-              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+          // Render window of lines around the current position
+          for (int i = 0; i < parsedLines.length; i++)
+            _buildGradualLyricLine(
+              theme: theme,
+              lineIndex: i,
+              text: parsedLines[i].text,
+              continuousIndex: continuousIndex,
+              lineHeight: lineHeight,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            line2,
-            style: TextStyle(
-              fontSize: 14,
-              fontStyle: FontStyle.italic,
-              color: theme.colorScheme.primary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            line3,
-            style: TextStyle(
-              fontSize: 13,
-              fontStyle: FontStyle.italic,
-              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildGradualLyricLine({
+    required ThemeData theme,
+    required int lineIndex,
+    required String text,
+    required double continuousIndex,
+    required double lineHeight,
+  }) {
+    // Relative distance: 0.0 means perfectly in center, -1.0 is one line above, +1.0 is one line below
+    final double distance = lineIndex - continuousIndex;
+
+    // Only render lines in view (-1.8 to 1.8)
+    if (distance < -1.8 || distance > 1.8) {
+      return const SizedBox.shrink();
+    }
+
+    // Vertical Y offset moving gradually upwards
+    final double yOffset = distance * lineHeight;
+
+    // Gradual smooth opacity: 1.0 at center, fades smoothly to ~0.35 as it moves away
+    final double normalizedDist = distance.abs();
+    final double opacity = (1.0 - (normalizedDist * 0.45)).clamp(0.25, 1.0);
+
+    // Uniform font size and normal weight for all lines
+    const double fontSize = 14.0;
+    const FontWeight fontWeight = FontWeight.normal;
+
+    return Transform.translate(
+      offset: Offset(0, yOffset),
+      child: Opacity(
+        opacity: opacity,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: fontSize,
+              fontWeight: fontWeight,
+              color: theme.colorScheme.primary, // Yellow / Theme Primary color for all lines
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -211,7 +248,6 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
 
     final theme = Theme.of(context);
     final parsedLyrics = _parseLyrics(track.lyrics);
-    final currentLyricIndex = _findCurrentLineIndex(parsedLyrics, widget.playerState.currentPositionSec);
 
     return Container(
       color: theme.colorScheme.surface,
@@ -451,7 +487,7 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                   const SizedBox(height: 16),
                   
                   // Lyrics Queue
-                  _buildLyricsQueue(theme, parsedLyrics, currentLyricIndex),
+                  _buildLyricsQueue(theme, parsedLyrics, widget.playerState.currentPositionMs),
                   
                   const SizedBox(height: 16),
                   

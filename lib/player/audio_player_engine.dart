@@ -8,6 +8,7 @@ class PlayerStateData {
   final TrackEntity? currentTrack;
   final bool isPlaying;
   final int currentPositionSec;
+  final int currentPositionMs;
   final int durationSec;
   final bool isLooping;
   final bool isShuffle;
@@ -20,6 +21,7 @@ class PlayerStateData {
     this.currentTrack,
     this.isPlaying = false,
     this.currentPositionSec = 0,
+    this.currentPositionMs = 0,
     this.durationSec = 0,
     this.isLooping = false,
     this.isShuffle = false,
@@ -33,6 +35,7 @@ class PlayerStateData {
     TrackEntity? currentTrack,
     bool? isPlaying,
     int? currentPositionSec,
+    int? currentPositionMs,
     int? durationSec,
     bool? isLooping,
     bool? isShuffle,
@@ -45,6 +48,7 @@ class PlayerStateData {
       currentTrack: currentTrack ?? this.currentTrack,
       isPlaying: isPlaying ?? this.isPlaying,
       currentPositionSec: currentPositionSec ?? this.currentPositionSec,
+      currentPositionMs: currentPositionMs ?? this.currentPositionMs,
       durationSec: durationSec ?? this.durationSec,
       isLooping: isLooping ?? this.isLooping,
       isShuffle: isShuffle ?? this.isShuffle,
@@ -74,7 +78,10 @@ class AudioPlayerEngine extends ChangeNotifier {
   AudioPlayerEngine() {
     _audioPlayer.positionStream.listen((pos) {
       if (!_isSynthPlaying) {
-        _updateState(_playerState.copyWith(currentPositionSec: pos.inSeconds));
+        _updateState(_playerState.copyWith(
+          currentPositionSec: pos.inSeconds,
+          currentPositionMs: pos.inMilliseconds,
+        ));
       }
     });
     
@@ -110,6 +117,7 @@ class AudioPlayerEngine extends ChangeNotifier {
       currentTrack: track,
       isPlaying: true,
       currentPositionSec: 0,
+      currentPositionMs: 0,
       durationSec: track.durationSeconds,
       playlistQueue: activeQueue,
       currentIndex: safeIndex,
@@ -175,7 +183,10 @@ class AudioPlayerEngine extends ChangeNotifier {
   void seekTo(int seconds) {
     final maxDur = _playerState.durationSec;
     final clamped = seconds.clamp(0, maxDur);
-    _updateState(_playerState.copyWith(currentPositionSec: clamped));
+    _updateState(_playerState.copyWith(
+      currentPositionSec: clamped,
+      currentPositionMs: clamped * 1000,
+    ));
 
     if (_isSynthPlaying) {
       // Just update state
@@ -265,7 +276,10 @@ class AudioPlayerEngine extends ChangeNotifier {
         timer.cancel();
         _onPlaybackFinished();
       } else {
-        _updateState(_playerState.copyWith(currentPositionSec: nextPos));
+        _updateState(_playerState.copyWith(
+          currentPositionSec: nextPos,
+          currentPositionMs: nextPos * 1000,
+        ));
       }
     });
   }
