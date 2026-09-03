@@ -4,6 +4,25 @@ enum OwnerType {
   anonymous
 }
 
+enum UserRole {
+  user,
+  artist,
+  admin
+}
+
+enum SubscriptionPlan {
+  free,
+  oneMonth,
+  threeMonths,
+  oneYear
+}
+
+enum SubscriptionStatus {
+  active,
+  expired,
+  pending
+}
+
 class SocialLinks {
   final String youtube;
   final String facebook;
@@ -359,5 +378,186 @@ class ChatMessageEntity {
       'timestamp': timestamp,
       'isUser': isUser ? 1 : 0,
     };
+  }
+}
+
+class UserEntity {
+  final String id;
+  final String phone;
+  final String? email;
+  final String name;
+  final String avatarUrl;
+  final UserRole role;
+  final SubscriptionPlan subscriptionPlan;
+  final SubscriptionStatus subscriptionStatus;
+  final int subscriptionExpiresAt; // epoch ms
+  final int subscriptionStartedAt; // epoch ms
+  final int? lastPaymentAt;
+  final double? lastPaymentAmount;
+  final bool mustChangePassword;
+  final bool isVerified;
+  final int createdTimestamp;
+  final int updatedTimestamp;
+
+  UserEntity({
+    required this.id,
+    required this.phone,
+    this.email,
+    required this.name,
+    this.avatarUrl = '',
+    this.role = UserRole.user,
+    this.subscriptionPlan = SubscriptionPlan.free,
+    this.subscriptionStatus = SubscriptionStatus.active,
+    required this.subscriptionExpiresAt,
+    required this.subscriptionStartedAt,
+    this.lastPaymentAt,
+    this.lastPaymentAmount,
+    this.mustChangePassword = false,
+    this.isVerified = false,
+    int? createdTimestamp,
+    int? updatedTimestamp,
+  })  : createdTimestamp = createdTimestamp ?? DateTime.now().millisecondsSinceEpoch,
+        updatedTimestamp = updatedTimestamp ?? DateTime.now().millisecondsSinceEpoch;
+
+  bool get isSubscriptionActive =>
+      subscriptionStatus == SubscriptionStatus.active &&
+      DateTime.now().millisecondsSinceEpoch < subscriptionExpiresAt;
+
+  bool get isFreeTier => subscriptionPlan == SubscriptionPlan.free;
+
+  factory UserEntity.fromMap(Map<String, dynamic> map) {
+    UserRole parseRole(String? v) {
+      switch (v) {
+        case 'artist':
+          return UserRole.artist;
+        case 'admin':
+          return UserRole.admin;
+        default:
+          return UserRole.user;
+      }
+    }
+
+    SubscriptionPlan parsePlan(String? v) {
+      switch (v) {
+        case 'one_month':
+          return SubscriptionPlan.oneMonth;
+        case 'three_months':
+          return SubscriptionPlan.threeMonths;
+        case 'one_year':
+          return SubscriptionPlan.oneYear;
+        default:
+          return SubscriptionPlan.free;
+      }
+    }
+
+    SubscriptionStatus parseStatus(String? v) {
+      switch (v) {
+        case 'expired':
+          return SubscriptionStatus.expired;
+        case 'pending':
+          return SubscriptionStatus.pending;
+        default:
+          return SubscriptionStatus.active;
+      }
+    }
+
+    int parseTimestamp(dynamic v) {
+      if (v == null) return DateTime.now().millisecondsSinceEpoch;
+      if (v is int) return v;
+      if (v is String) {
+        final dt = DateTime.tryParse(v);
+        if (dt != null) return dt.millisecondsSinceEpoch;
+        return int.tryParse(v) ?? DateTime.now().millisecondsSinceEpoch;
+      }
+      return DateTime.now().millisecondsSinceEpoch;
+    }
+
+    return UserEntity(
+      id: (map['id'] ?? map['_id'] ?? '').toString(),
+      phone: (map['phone'] ?? '').toString(),
+      email: map['email']?.toString(),
+      name: (map['name'] ?? '').toString(),
+      avatarUrl: (map['avatarUrl'] ?? '').toString(),
+      role: parseRole(map['role']?.toString()),
+      subscriptionPlan: parsePlan(map['subscriptionPlan']?.toString()),
+      subscriptionStatus: parseStatus(map['subscriptionStatus']?.toString()),
+      subscriptionExpiresAt: parseTimestamp(map['subscriptionExpiresAt']),
+      subscriptionStartedAt: parseTimestamp(map['subscriptionStartedAt'] ?? map['createdAt']),
+      lastPaymentAt: map['lastPaymentAt'] != null ? parseTimestamp(map['lastPaymentAt']) : null,
+      lastPaymentAmount: map['lastPaymentAmount'] != null
+          ? double.tryParse(map['lastPaymentAmount'].toString())
+          : null,
+      mustChangePassword: map['mustChangePassword'] == 1 || map['mustChangePassword'] == true,
+      isVerified: map['isVerified'] == 1 || map['isVerified'] == true,
+      createdTimestamp: parseTimestamp(map['createdAt'] ?? map['createdTimestamp']),
+      updatedTimestamp: parseTimestamp(map['updatedAt'] ?? map['updatedTimestamp']),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    String planToString(SubscriptionPlan p) {
+      switch (p) {
+        case SubscriptionPlan.oneMonth:
+          return 'one_month';
+        case SubscriptionPlan.threeMonths:
+          return 'three_months';
+        case SubscriptionPlan.oneYear:
+          return 'one_year';
+        default:
+          return 'free';
+      }
+    }
+
+    return {
+      'id': id,
+      'phone': phone,
+      'email': email,
+      'name': name,
+      'avatarUrl': avatarUrl,
+      'role': role.name,
+      'subscriptionPlan': planToString(subscriptionPlan),
+      'subscriptionStatus': subscriptionStatus.name,
+      'subscriptionExpiresAt': subscriptionExpiresAt,
+      'subscriptionStartedAt': subscriptionStartedAt,
+      'lastPaymentAt': lastPaymentAt,
+      'lastPaymentAmount': lastPaymentAmount,
+      'mustChangePassword': mustChangePassword ? 1 : 0,
+      'isVerified': isVerified ? 1 : 0,
+      'createdAt': createdTimestamp,
+      'updatedAt': updatedTimestamp,
+    };
+  }
+
+  UserEntity copyWith({
+    String? phone,
+    String? email,
+    String? name,
+    String? avatarUrl,
+    UserRole? role,
+    SubscriptionPlan? subscriptionPlan,
+    SubscriptionStatus? subscriptionStatus,
+    int? subscriptionExpiresAt,
+    int? subscriptionStartedAt,
+    bool? mustChangePassword,
+    bool? isVerified,
+  }) {
+    return UserEntity(
+      id: id,
+      phone: phone ?? this.phone,
+      email: email ?? this.email,
+      name: name ?? this.name,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      role: role ?? this.role,
+      subscriptionPlan: subscriptionPlan ?? this.subscriptionPlan,
+      subscriptionStatus: subscriptionStatus ?? this.subscriptionStatus,
+      subscriptionExpiresAt: subscriptionExpiresAt ?? this.subscriptionExpiresAt,
+      subscriptionStartedAt: subscriptionStartedAt ?? this.subscriptionStartedAt,
+      lastPaymentAt: lastPaymentAt,
+      lastPaymentAmount: lastPaymentAmount,
+      mustChangePassword: mustChangePassword ?? this.mustChangePassword,
+      isVerified: isVerified ?? this.isVerified,
+      createdTimestamp: createdTimestamp,
+      updatedTimestamp: DateTime.now().millisecondsSinceEpoch,
+    );
   }
 }

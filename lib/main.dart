@@ -11,9 +11,11 @@ import 'package:rawang_melodies/ui/screens/community_chat_screen.dart';
 import 'package:rawang_melodies/ui/screens/home_screen.dart';
 import 'package:rawang_melodies/ui/screens/offline_screen.dart';
 import 'package:rawang_melodies/ui/screens/owners_screen.dart';
-import 'package:rawang_melodies/ui/screens/playlists_screen.dart';
+import 'package:rawang_melodies/ui/screens/settings/settings_screen.dart';
+import 'package:rawang_melodies/ui/screens/auth/auth_gate.dart';
 import 'package:rawang_melodies/ui/screens/splash_screen.dart';
 import 'package:rawang_melodies/ui/theme.dart';
+import 'package:rawang_melodies/viewmodels/auth_view_model.dart';
 import 'package:rawang_melodies/viewmodels/chat_view_model.dart';
 import 'package:rawang_melodies/viewmodels/music_view_model.dart';
 
@@ -29,6 +31,7 @@ void main() async {
           update: (context, engine, previous) => previous ?? MusicViewModel(engine),
         ),
         ChangeNotifierProvider(create: (_) => ChatViewModel()),
+        ChangeNotifierProvider(create: (_) => AuthViewModel()),
       ],
       child: const RawangMusicApp(),
     ),
@@ -44,7 +47,7 @@ class RawangMusicApp extends StatelessWidget {
       title: 'Rawang Melodies',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      home: const SplashScreen(nextScreen: MainScreen()),
+      home: const SplashScreen(nextScreen: AuthGate()),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -138,26 +141,11 @@ class MainScreen extends StatelessWidget {
           musicViewModel.selectTab(AppTab.values[index]);
         },
         destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.album),
-            label: 'Albums',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.queue_music),
-            label: 'Library',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.offline_pin),
-            label: 'Offline',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.chat),
-            label: 'Chat',
-          ),
+          NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.album), label: 'Albums'),
+          NavigationDestination(icon: Icon(Icons.offline_pin), label: 'Offline'),
+          NavigationDestination(icon: Icon(Icons.chat), label: 'Chat'),
+          NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),
     );
@@ -183,13 +171,7 @@ class MainScreen extends StatelessWidget {
               onToggleDownload: viewModel.toggleDownload,
               onToggleFavorite: viewModel.toggleFavorite,
               onAddToPlaylist: (track) {
-                showAddToPlaylistDialog(
-                  context,
-                  track,
-                  viewModel.playlists,
-                  viewModel.addTrackToPlaylist,
-                  () => showCreatePlaylistDialog(context, viewModel.createPlaylist),
-                );
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Playlists removed - use Favorites (heart)')));
               },
               onShare: (track) => showShareDialog(context, track),
             )
@@ -204,20 +186,11 @@ class MainScreen extends StatelessWidget {
         onToggleDownload: viewModel.toggleDownload,
         onToggleFavorite: viewModel.toggleFavorite,
         onAddToPlaylist: (track) {
-          showAddToPlaylistDialog(
-            context,
-            track,
-            viewModel.playlists,
-            viewModel.addTrackToPlaylist,
-            () => showCreatePlaylistDialog(context, viewModel.createPlaylist),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Playlists removed - use Favorites (heart)')));
         },
         onShare: (track) => showShareDialog(context, track),
         onOpenAddSongDialog: () {
-          showAddSongDialog(
-            context,
-            viewModel.contributeTrack,
-          );
+          showAddSongDialog(context, viewModel.contributeTrack);
         },
         onFilterByOwner: (filter) {
           if (filter == "ALL") {
@@ -253,13 +226,7 @@ class MainScreen extends StatelessWidget {
               onToggleDownload: viewModel.toggleDownload,
               onToggleFavorite: viewModel.toggleFavorite,
               onAddToPlaylist: (track) {
-                showAddToPlaylistDialog(
-                  context,
-                  track,
-                  viewModel.playlists,
-                  viewModel.addTrackToPlaylist,
-                  () => showCreatePlaylistDialog(context, viewModel.createPlaylist),
-                );
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Playlists removed - use Favorites (heart)')));
               },
               onShare: (track) => showShareDialog(context, track),
             )
@@ -272,45 +239,26 @@ class MainScreen extends StatelessWidget {
               onSelectAlbum: viewModel.selectAlbum,
             ),
 
-      // AppTab.playlists (index 2)
-      PlaylistsScreen(
-        playlists: viewModel.playlists,
-        favoriteTracks: viewModel.favoriteTracks,
-        selectedPlaylist: viewModel.selectedPlaylist,
-        selectedPlaylistTracks: viewModel.selectedPlaylistTracks,
-        currentPlayingTrackId: viewModel.playerEngine.playerState.currentTrack?.id,
-        onSelectPlaylist: viewModel.selectPlaylist,
-        onPlayTrack: (track, ctx) => viewModel.playTrack(track, playlistContext: ctx),
-        onToggleDownload: viewModel.toggleDownload,
-        onToggleFavorite: viewModel.toggleFavorite,
-        onShare: (track) => showShareDialog(context, track),
-      ),
-
-      // AppTab.offline (index 3)
+      // AppTab.offline (index 2) - Favorites + Downloaded fused, playlists discarded
       OfflineScreen(
         downloadedTracks: viewModel.downloadedTracks,
+        favoriteTracks: viewModel.favoriteTracks,
         currentPlayingTrackId: viewModel.playerEngine.playerState.currentTrack?.id,
         onPlayTrack: (track, ctx) => viewModel.playTrack(track, playlistContext: ctx),
         onToggleDownload: viewModel.toggleDownload,
         onToggleFavorite: viewModel.toggleFavorite,
-        onAddToPlaylist: (track) {
-          showAddToPlaylistDialog(
-            context,
-            track,
-            viewModel.playlists,
-            viewModel.addTrackToPlaylist,
-            () => showCreatePlaylistDialog(context, viewModel.createPlaylist),
-          );
-        },
         onShare: (track) => showShareDialog(context, track),
       ),
 
-      // AppTab.chat (index 4)
+      // AppTab.chat (index 3)
       CommunityChatScreen(
         messages: chatViewModel.messages,
         onSendMessage: chatViewModel.sendMessage,
         onLoadMore: chatViewModel.loadMoreMessages,
       ),
+
+      // AppTab.settings (index 4) - last right, Login/Logout
+      const SettingsScreen(),
     ];
   }
 }

@@ -6,7 +6,7 @@ import 'package:rawang_melodies/data/remote/api_service.dart';
 
 class DatabaseHelper {
   static const _databaseName = "rawang_database.db";
-  static const _databaseVersion = 5;
+  static const _databaseVersion = 6;
 
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
@@ -82,6 +82,30 @@ class DatabaseHelper {
       if (!existing.contains('trackCount')) {
         await db.execute('ALTER TABLE owners ADD COLUMN trackCount INTEGER DEFAULT 0');
       }
+    }
+
+    if (oldVersion < 6) {
+      // v5 -> v6: add users table for Phone+Password JWT auth + manual subscription
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+          id TEXT PRIMARY KEY,
+          phone TEXT UNIQUE,
+          email TEXT,
+          name TEXT,
+          avatarUrl TEXT DEFAULT "",
+          role TEXT DEFAULT "user",
+          subscriptionPlan TEXT DEFAULT "free",
+          subscriptionStatus TEXT DEFAULT "active",
+          subscriptionExpiresAt INTEGER,
+          subscriptionStartedAt INTEGER,
+          lastPaymentAt INTEGER,
+          lastPaymentAmount REAL,
+          mustChangePassword INTEGER DEFAULT 0,
+          isVerified INTEGER DEFAULT 0,
+          createdAt INTEGER,
+          updatedAt INTEGER
+        )
+      ''');
     }
   }
 
@@ -163,6 +187,27 @@ class DatabaseHelper {
         tiktok TEXT DEFAULT "",
         albumCount INTEGER DEFAULT 0,
         trackCount INTEGER DEFAULT 0
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE users (
+        id TEXT PRIMARY KEY,
+        phone TEXT UNIQUE,
+        email TEXT,
+        name TEXT,
+        avatarUrl TEXT DEFAULT "",
+        role TEXT DEFAULT "user",
+        subscriptionPlan TEXT DEFAULT "free",
+        subscriptionStatus TEXT DEFAULT "active",
+        subscriptionExpiresAt INTEGER,
+        subscriptionStartedAt INTEGER,
+        lastPaymentAt INTEGER,
+        lastPaymentAmount REAL,
+        mustChangePassword INTEGER DEFAULT 0,
+        isVerified INTEGER DEFAULT 0,
+        createdAt INTEGER,
+        updatedAt INTEGER
       )
     ''');
 
@@ -372,5 +417,35 @@ class DatabaseHelper {
   Future<void> insertAlbum(AlbumEntity album) async {
     final db = await database;
     await db.insert('albums', album.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  // ── Users DAO (Phone+Password JWT + manual subscription) ───────────────
+  Future<void> upsertUser(UserEntity user) async {
+    final db = await database;
+    await db.insert('users', user.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<UserEntity?> getCurrentUser() async {
+    final db = await database;
+    final maps = await db.query('users', limit: 1, orderBy: 'updatedAt DESC');
+    if (maps.isEmpty) return null;
+    return UserEntity.fromMap(maps.first);
+  }
+
+  Future<UserEntity?> getUserByPhone(String phone) async {
+    final db = await database;
+    final maps = await db.query('users', where: 'phone = ?', whereArgs: [phone]);
+    if (maps.isEmpty) return null;
+    return UserEntity.fromMap(maps.first);
+  }
+
+  Future<void> clearUsers() async {
+    final db = await database;
+    await db.delete('users');
+  }
+
+  Future<void> deleteUser(String id) async {
+    final db = await database;
+    await db.delete('users', where: 'id = ?', whereArgs: [id]);
   }
 }

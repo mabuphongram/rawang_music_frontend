@@ -6,7 +6,7 @@ import 'package:rawang_melodies/data/local/database_helper.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
 import 'package:rawang_melodies/player/audio_player_engine.dart';
 
-enum AppTab { home, albums, playlists, offline, chat }
+enum AppTab { home, albums, offline, chat, settings }
 
 class MusicViewModel extends ChangeNotifier {
   final DatabaseHelper db = DatabaseHelper.instance;
@@ -18,6 +18,7 @@ class MusicViewModel extends ChangeNotifier {
   String? selectedOwnerName; // when set, filter by exact owner name
   AlbumEntity? selectedAlbum;
   AlbumEntity? homeSelectedAlbum;
+  // Legacy playlist state - retained for DB but UI discarded
   PlaylistEntity? selectedPlaylist;
   bool isAddSongDialogOpen = false;
   bool isCreatePlaylistDialogOpen = false;
@@ -174,6 +175,7 @@ class MusicViewModel extends ChangeNotifier {
   void selectTab(AppTab tab) {
     currentTab = tab;
     selectedAlbum = null;
+    // keep selectedPlaylist cleared but not used in UI
     selectedPlaylist = null;
     notifyListeners();
   }
