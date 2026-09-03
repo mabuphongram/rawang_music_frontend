@@ -289,30 +289,6 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
             ],
           ),
           const SizedBox(height: 8),
-          if (widget.playerState.isKaraokeMode)
-            Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.tertiaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.mic, color: theme.colorScheme.onTertiaryContainer, size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    "KARAOKE MODE: Instrumental Backing Active",
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onTertiaryContainer,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           
           Expanded(
             child: SingleChildScrollView(
@@ -498,7 +474,7 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                     label: Text(
                       widget.playerState.isKaraokeMode 
                           ? "Karaoke Mode: ON (Instrumental)" 
-                          : (track.hasKaraoke ? "Switch to Karaoke Version 🎤" : "Toggle Vocal Remover / Karaoke"),
+                          : (track.hasKaraoke ? "Switch to Karaoke Version 🎤" : "Sing Karaoke"),
                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
