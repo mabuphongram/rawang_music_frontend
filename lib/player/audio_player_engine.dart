@@ -121,6 +121,7 @@ class AudioPlayerEngine extends ChangeNotifier {
       durationSec: track.durationSeconds,
       playlistQueue: activeQueue,
       currentIndex: safeIndex,
+      isKaraokeMode: false, // Karaoke must only live within a single song
     ));
 
     _startAudioPlayback(track);
