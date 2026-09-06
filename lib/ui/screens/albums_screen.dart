@@ -4,6 +4,7 @@ import 'package:rawang_melodies/ui/components/album_card.dart';
 
 class AlbumsScreen extends StatelessWidget {
   final List<AlbumEntity> albums;
+  final List<TrackEntity> tracks;
   final String searchQuery;
   final String selectedOwnerFilter;
   final void Function(String) onSearchQueryChange;
@@ -13,6 +14,7 @@ class AlbumsScreen extends StatelessWidget {
   const AlbumsScreen({
     super.key,
     required this.albums,
+    required this.tracks,
     required this.searchQuery,
     required this.selectedOwnerFilter,
     required this.onSearchQueryChange,
@@ -95,8 +97,10 @@ class AlbumsScreen extends StatelessWidget {
                     itemCount: albums.length,
                     itemBuilder: (context, index) {
                       final album = albums[index];
+                      final count = tracks.where((t) => t.albumId == album.id).length;
                       return AlbumCard(
                         album: album,
+                        trackCount: count,
                         onClick: () => onSelectAlbum(album),
                       );
                     },

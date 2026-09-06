@@ -232,6 +232,7 @@ class MainScreen extends StatelessWidget {
             )
           : AlbumsScreen(
               albums: viewModel.filteredAlbums,
+              tracks: viewModel.tracks,
               searchQuery: viewModel.searchQuery,
               selectedOwnerFilter: viewModel.selectedOwnerFilter,
               onSearchQueryChange: viewModel.updateSearchQuery,

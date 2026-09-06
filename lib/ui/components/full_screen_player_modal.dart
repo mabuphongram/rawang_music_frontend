@@ -248,6 +248,8 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
 
     final theme = Theme.of(context);
     final parsedLyrics = _parseLyrics(track.lyrics);
+    final bool isKaraoke = widget.playerState.isKaraokeMode;
+    final Color accent = isKaraoke ? Colors.red : theme.colorScheme.primary;
 
     return Container(
       color: theme.colorScheme.surface,
@@ -411,15 +413,15 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                 decoration: BoxDecoration(
-                                  color: theme.colorScheme.tertiary,
+                                  color: Colors.red,
                                   borderRadius: BorderRadius.circular(20),
                                 ),
-                                child: Text(
+                                child: const Text(
                                   "🎤 SING-ALONG",
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.onTertiary,
+                                    color: Colors.white,
                                   ),
                                 ),
                               ),
@@ -442,7 +444,7 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                                       decoration: BoxDecoration(
                                         color: hasKaraoke
                                             ? (widget.playerState.isKaraokeMode
-                                                ? theme.colorScheme.tertiary
+                                                ? Colors.red
                                                 : theme.colorScheme.primary)
                                             : Colors.grey.shade600,
                                         borderRadius: BorderRadius.circular(20),
@@ -470,7 +472,7 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                                             size: 14,
                                             color: hasKaraoke
                                                 ? (widget.playerState.isKaraokeMode
-                                                    ? theme.colorScheme.onTertiary
+                                                    ? Colors.white
                                                     : theme.colorScheme.onPrimary)
                                                 : Colors.white.withOpacity(0.6),
                                           ),
@@ -484,7 +486,7 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                                               fontWeight: FontWeight.bold,
                                               color: hasKaraoke
                                                   ? (widget.playerState.isKaraokeMode
-                                                      ? theme.colorScheme.onTertiary
+                                                      ? Colors.white
                                                       : theme.colorScheme.onPrimary)
                                                   : Colors.white.withOpacity(0.6),
                                             ),
@@ -541,8 +543,8 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                   const SizedBox(height: 16),
                   SliderTheme(
                     data: SliderTheme.of(context).copyWith(
-                      thumbColor: theme.colorScheme.primary,
-                      activeTrackColor: theme.colorScheme.primary,
+                      thumbColor: accent,
+                      activeTrackColor: accent,
                       inactiveTrackColor: theme.colorScheme.surfaceVariant,
                     ),
                     child: Slider(
@@ -592,7 +594,7 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                           height: 64,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: theme.colorScheme.primary,
+                            color: accent,
                           ),
                           child: Icon(
                             widget.playerState.isPlaying ? Icons.pause : Icons.play_arrow,
@@ -627,16 +629,31 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                         onPressed: widget.onToggleFavorite,
                         icon: Icon(
                           track.isFavorite ? Icons.favorite : Icons.favorite_border,
-                          color: track.isFavorite ? theme.colorScheme.tertiary : theme.colorScheme.onPrimary,
+                          color: isKaraoke ? Colors.red : (track.isFavorite ? theme.colorScheme.tertiary : theme.colorScheme.onPrimary),
                         ),
-                        label: Text(track.isFavorite ? "Favorited" : "Favorite"),
-                        style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
+                        label: Text(
+                          track.isFavorite ? "Favorited" : "Favorite",
+                          style: TextStyle(color: isKaraoke ? Colors.red : null),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          foregroundColor: isKaraoke ? Colors.red : null,
+                        ),
                       ),
                       ElevatedButton.icon(
                         onPressed: widget.onToggleDownload,
-                        icon: Icon(track.isDownloaded ? Icons.download_done : Icons.download),
-                        label: Text(track.isDownloaded ? "Downloaded Offline" : "Download Offline"),
-                        style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
+                        icon: Icon(
+                          track.isDownloaded ? Icons.download_done : Icons.download,
+                          color: isKaraoke ? Colors.red : null,
+                        ),
+                        label: Text(
+                          track.isDownloaded ? "Downloaded Offline" : "Download Offline",
+                          style: TextStyle(color: isKaraoke ? Colors.red : null),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          foregroundColor: isKaraoke ? Colors.red : null,
+                        ),
                       ),
                     ],
                   ),
