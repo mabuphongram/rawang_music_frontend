@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rawang_melodies/viewmodels/music_view_model.dart';
@@ -17,7 +18,6 @@ class _SplashScreenState extends State<SplashScreen>
   static const _maxWait = Duration(seconds: 8);
   late final AnimationController _progressController;
   bool _showOfflineNoCache = false;
-  bool _isRetrying = false;
 
   @override
   void initState() {
@@ -61,7 +61,6 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _retry() async {
     setState(() {
       _showOfflineNoCache = false;
-      _isRetrying = true;
     });
     _progressController.reset();
     _progressController.forward();
@@ -80,7 +79,6 @@ class _SplashScreenState extends State<SplashScreen>
     if (vm.syncError != null && !hasCache) {
       setState(() {
         _showOfflineNoCache = true;
-        _isRetrying = false;
       });
       return;
     }
@@ -136,103 +134,102 @@ class _SplashScreenState extends State<SplashScreen>
             child: Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(28, 0, 28, 52),
+                padding: const EdgeInsets.fromLTRB(28, 0, 28, 40),
                 child: _showOfflineNoCache
                     ? _buildOfflineNoCacheCard()
                     : AnimatedBuilder(
                         animation: _progressController,
                         builder: (context, child) {
-                          final secondsLeft =
-                              (_minSplash.inMilliseconds / 1000 * (1 - _progressController.value))
-                                  .ceil()
-                                  .clamp(0, 2);
                           return Column(
                             mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    'Rawang Melodies',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.4,
+                              if (isOfflineWithCache)
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.45),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: const Color(0xFFFFD36E).withValues(alpha: 0.6),
+                                      width: 1,
                                     ),
                                   ),
-                                  if (isOfflineWithCache)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.orange.withValues(alpha: 0.9),
-                                        borderRadius: BorderRadius.circular(20),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.wifi_off, size: 13, color: Color(0xFFFFD36E)),
+                                      SizedBox(width: 5),
+                                      Text(
+                                        'Offline • cached library',
+                                        style: TextStyle(
+                                          color: Color(0xFFFFD36E),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
-                                      child: const Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.wifi_off, size: 14, color: Colors.white),
-                                          SizedBox(width: 4),
-                                          Text(
-                                            'Offline',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  else
-                                    Text(
-                                      _isRetrying ? 'retrying...' : '$secondsLeft s',
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              if (isOfflineWithCache)
-                                const Padding(
-                                  padding: EdgeInsets.only(top: 6),
-                                  child: Text(
-                                    'No internet - showing cached library',
-                                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                                    ],
                                   ),
                                 ),
-                              const SizedBox(height: 12),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(99),
-                                child: LinearProgressIndicator(
-                                  value: _showOfflineNoCache
-                                      ? null
-                                      : _progressController.value == 1.0 && isOfflineWithCache
-                                          ? null // indeterminate while waiting with cache? keep determinate full
-                                          : _progressController.value,
-                                  minHeight: 4,
-                                  backgroundColor: Colors.white30,
-                                  valueColor: const AlwaysStoppedAnimation<Color>(
-                                    Color(0xFFFFD36E),
-                                  ),
-                                ),
-                              ),
-                              if (isOfflineWithCache)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 10),
-                                  child: Text(
-                                    'Sync failed: ${vm.syncError}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(color: Colors.white54, fontSize: 11),
-                                  ),
-                                ),
+                              _buildGoldenCircularLoader(_progressController.value),
                             ],
                           );
                         },
                       ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGoldenCircularLoader(double progress) {
+    const gold = Color(0xFFEACD8A);
+    return SizedBox(
+      width: 200,
+      height: 92,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Left decorative waves
+          Positioned(
+            left: 0,
+            child: CustomPaint(
+              size: const Size(52, 40),
+              painter: _GoldWavesPainter(mirror: false),
+            ),
+          ),
+          // Right decorative waves
+          Positioned(
+            right: 0,
+            child: CustomPaint(
+              size: const Size(52, 40),
+              painter: _GoldWavesPainter(mirror: true),
+            ),
+          ),
+          // Golden ring with progress + glow dot
+          SizedBox(
+            width: 84,
+            height: 84,
+            child: CustomPaint(
+              painter: _GoldenRingPainter(progress: progress.clamp(0.0, 1.0), gold: gold),
+              child: Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: const [
+                    _WaveBar(height: 8),
+                    SizedBox(width: 3),
+                    _WaveBar(height: 14),
+                    SizedBox(width: 3),
+                    _WaveBar(height: 22),
+                    SizedBox(width: 3),
+                    _WaveBar(height: 14),
+                    SizedBox(width: 3),
+                    _WaveBar(height: 8),
+                  ],
+                ),
               ),
             ),
           ),
@@ -299,4 +296,130 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
   }
+}
+
+class _WaveBar extends StatelessWidget {
+  final double height;
+  const _WaveBar({required this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 3,
+      height: height,
+      decoration: BoxDecoration(
+        color: const Color(0xFFEACD8A),
+        borderRadius: BorderRadius.circular(99),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFEACD8A).withValues(alpha: 0.7),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GoldenRingPainter extends CustomPainter {
+  final double progress;
+  final Color gold;
+
+  _GoldenRingPainter({required this.progress, required this.gold});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - 8) / 2;
+
+    // Base faint ring
+    final basePaint = Paint()
+      ..color = gold.withValues(alpha: 0.28)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
+    canvas.drawCircle(center, radius, basePaint);
+
+    // Progress arc starting at top
+    final sweep = progress * 3.141592653589793 * 2;
+    if (sweep > 0.001) {
+      final progressPaint = Paint()
+        ..color = gold
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5
+        ..strokeCap = StrokeCap.round;
+      // Soft glow under the arc
+      final glowPaint = Paint()
+        ..color = gold.withValues(alpha: 0.35)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 7
+        ..strokeCap = StrokeCap.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -3.141592653589793 / 2,
+        sweep,
+        false,
+        glowPaint,
+      );
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -3.141592653589793 / 2,
+        sweep,
+        false,
+        progressPaint,
+      );
+
+      // Glowing dot at the tip
+      final angle = -3.141592653589793 / 2 + sweep;
+      final dotPos = Offset(
+        center.dx + radius * math.cos(angle),
+        center.dy + radius * math.sin(angle),
+      );
+      final dotGlow = Paint()
+        ..color = gold.withValues(alpha: 0.55)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+      canvas.drawCircle(dotPos, 7, dotGlow);
+      final dotCore = Paint()..color = const Color(0xFFFFF6E0);
+      canvas.drawCircle(dotPos, 3.2, dotCore);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _GoldenRingPainter oldDelegate) =>
+      oldDelegate.progress != progress;
+}
+
+class _GoldWavesPainter extends CustomPainter {
+  final bool mirror;
+  _GoldWavesPainter({required this.mirror});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFEACD8A).withValues(alpha: 0.55)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1;
+    final faint = Paint()
+      ..color = const Color(0xFFEACD8A).withValues(alpha: 0.28)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    for (int i = 0; i < 3; i++) {
+      final y = 8.0 + i * 10.0;
+      final path = Path();
+      if (!mirror) {
+        path.moveTo(0, y + 6);
+        path.quadraticBezierTo(size.width * 0.35, y - 6, size.width * 0.6, y + 2);
+        path.quadraticBezierTo(size.width * 0.8, y + 8, size.width, y - 2);
+      } else {
+        path.moveTo(size.width, y + 6);
+        path.quadraticBezierTo(size.width * 0.65, y - 6, size.width * 0.4, y + 2);
+        path.quadraticBezierTo(size.width * 0.2, y + 8, 0, y - 2);
+      }
+      canvas.drawPath(path, i == 1 ? paint : faint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _GoldWavesPainter oldDelegate) => false;
 }

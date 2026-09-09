@@ -6,7 +6,7 @@ import 'package:rawang_melodies/data/remote/api_service.dart';
 import 'package:rawang_melodies/ui/components/album_card.dart';
 import 'package:rawang_melodies/ui/components/track_list_item.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final List<AlbumEntity> albums;
   final List<TrackEntity> tracks;
   final List<TrackEntity> popularTracks;
@@ -18,6 +18,7 @@ class HomeScreen extends StatelessWidget {
   final void Function(TrackEntity) onToggleFavorite;
   final void Function(TrackEntity) onAddToPlaylist;
   final void Function(TrackEntity) onShare;
+  final int onlineCount;
   final VoidCallback onOpenAddSongDialog;
   final void Function(String) onFilterByOwner;
   final VoidCallback onSeeAllOwners;
@@ -35,10 +36,37 @@ class HomeScreen extends StatelessWidget {
     required this.onToggleFavorite,
     required this.onAddToPlaylist,
     required this.onShare,
+    required this.onlineCount,
     required this.onOpenAddSongDialog,
     required this.onFilterByOwner,
     required this.onSeeAllOwners,
   });
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.4).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -172,7 +200,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 GestureDetector(
-                  onTap: onSeeAllOwners,
+                  onTap: widget.onSeeAllOwners,
                   child: Text(
                     "See All",
                     style: TextStyle(
@@ -189,7 +217,7 @@ class HomeScreen extends StatelessWidget {
 
           SizedBox(
             height: 120,
-            child: owners.isEmpty
+            child: widget.owners.isEmpty
                 ? const Center(child: Text('Loading owners...', style: TextStyle(fontSize: 12)))
                 : ListView(
                     scrollDirection: Axis.horizontal,
@@ -220,7 +248,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 ElevatedButton.icon(
-                  onPressed: onOpenAddSongDialog,
+                  onPressed: widget.onOpenAddSongDialog,
                   icon: const Icon(Icons.add, size: 16),
                   label: const Text("Contribute Song", style: TextStyle(fontSize: 12)),
                   style: ElevatedButton.styleFrom(
@@ -239,16 +267,16 @@ class HomeScreen extends StatelessWidget {
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               scrollDirection: Axis.horizontal,
-              itemCount: albums.length,
+              itemCount: widget.albums.length,
               separatorBuilder: (_, index) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
-                final album = albums[index];
-                final count = tracks.where((t) => t.albumId == album.id).length;
+                final album = widget.albums[index];
+                final count = widget.tracks.where((t) => t.albumId == album.id).length;
                 return AlbumCard(
                   width: 160,
                   album: album,
                   trackCount: count,
-                  onClick: () => onSelectAlbum(album),
+                  onClick: () => widget.onSelectAlbum(album),
                 );
               },
             ),
@@ -259,18 +287,61 @@ class HomeScreen extends StatelessWidget {
           // Featured Rawang Traditional Songs
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              "Popular Songs",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Popular Songs",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Online",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6)
+                        ),
+                      ),
+                      const SizedBox(width: 7),
+
+                      ScaleTransition(
+                        scale: _pulseAnimation,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        "${widget.onlineCount}",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 10),
           
-          popularTracks.isEmpty
+          widget.popularTracks.isEmpty
               ? const Center(
                   child: Padding(
                     padding: EdgeInsets.all(16.0),
@@ -281,18 +352,18 @@ class HomeScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   physics: const NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
-                  itemCount: popularTracks.length,
+                  itemCount: widget.popularTracks.length,
                   separatorBuilder: (_, index) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
-                    final track = popularTracks[index];
+                    final track = widget.popularTracks[index];
                     return TrackListItem(
                       track: track,
-                      isPlayingCurrentTrack: track.id == currentPlayingTrackId,
-                      onTrackClick: () => onPlayTrack(track, popularTracks),
-                      onToggleDownload: () => onToggleDownload(track),
-                      onToggleFavorite: () => onToggleFavorite(track),
-                      onAddToPlaylist: () => onAddToPlaylist(track),
-                      onShare: () => onShare(track),
+                      isPlayingCurrentTrack: track.id == widget.currentPlayingTrackId,
+                      onTrackClick: () => widget.onPlayTrack(track, widget.popularTracks),
+                      onToggleDownload: () => widget.onToggleDownload(track),
+                      onToggleFavorite: () => widget.onToggleFavorite(track),
+                      onAddToPlaylist: () => widget.onAddToPlaylist(track),
+                      onShare: () => widget.onShare(track),
                     );
                   },
                 ),
@@ -303,13 +374,13 @@ class HomeScreen extends StatelessWidget {
 
   List<Widget> _buildOwnerAvatars(BuildContext context) {
     final theme = Theme.of(context);
-    return owners.map((owner) {
+    return widget.owners.map((owner) {
       final avatarUrl = ApiService.resolveMediaUrl(owner.avatarUrl);
       final isSinger = owner.ownerType == OwnerType.singer.name;
       return Padding(
         padding: const EdgeInsets.only(right: 16),
         child: GestureDetector(
-          onTap: () => onFilterByOwner(owner.name),
+          onTap: () => widget.onFilterByOwner(owner.name),
           child: SizedBox(
             width: 72,
             child: Column(

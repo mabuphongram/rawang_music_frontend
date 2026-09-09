@@ -189,6 +189,7 @@ class MainScreen extends StatelessWidget {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Playlists removed - use Favorites (heart)')));
         },
         onShare: (track) => showShareDialog(context, track),
+        onlineCount: viewModel.onlineCount,
         onOpenAddSongDialog: () {
           showAddSongDialog(context, viewModel.contributeTrack);
         },

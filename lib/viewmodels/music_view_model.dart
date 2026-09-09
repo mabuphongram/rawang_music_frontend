@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:rawang_melodies/data/remote/api_service.dart';
 import 'package:rawang_melodies/data/local/database_helper.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
@@ -37,6 +38,10 @@ class MusicViewModel extends ChangeNotifier {
   List<TrackEntity> favoriteTracks = [];
   List<PlaylistEntity> playlists = [];
   List<TrackEntity> popularTracks = [];
+
+  // ── Online presence ────────────────────────────────────────────────
+  int onlineCount = 0;
+  IO.Socket? _presenceSocket;
 
   List<AlbumEntity> get filteredAlbums {
     final query = searchQuery.trim().toLowerCase();
@@ -79,6 +84,35 @@ class MusicViewModel extends ChangeNotifier {
     playerEngine.onTrackCompleted = (track) {
       ApiService.incrementPlayCount(track.id);
     };
+    _initPresenceSocket();
+  }
+
+  void _initPresenceSocket() {
+    final socketUrl = ApiService.baseUrl.replaceAll('/api', '');
+    _presenceSocket = IO.io(socketUrl, <String, dynamic>{
+      'transports': ['websocket'],
+      'autoConnect': true,
+    });
+
+    _presenceSocket?.onConnect((_) {
+      print('Presence socket connected');
+    });
+
+    _presenceSocket?.on('online_count', (data) {
+      onlineCount = data as int;
+      notifyListeners();
+    });
+
+    _presenceSocket?.onDisconnect((_) {
+      print('Presence socket disconnected');
+    });
+  }
+
+  @override
+  void dispose() {
+    _presenceSocket?.disconnect();
+    _presenceSocket?.dispose();
+    super.dispose();
   }
 
   /// Retry sync after offline/retry from splash screen
