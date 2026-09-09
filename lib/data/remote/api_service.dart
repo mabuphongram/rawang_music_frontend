@@ -124,6 +124,22 @@ class ApiService {
   }
 
   // ─────────────────────────────────────────────
+  // Hero slides (home 16:9 carousel)
+  // ─────────────────────────────────────────────
+  static Future<List<HeroSlideEntity>> fetchHeroSlides() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/hero-slides?isActive=true')).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((j) => HeroSlideEntity.fromMap(j)).toList();
+      }
+    } catch (e) {
+      print('Error fetching hero slides: $e');
+    }
+    return [];
+  }
+
+  // ─────────────────────────────────────────────
   // Chat messages
   // ─────────────────────────────────────────────
   static Future<List<ChatMessageEntity>> fetchChatMessages({int? beforeTimestamp, int limit = 20}) async {

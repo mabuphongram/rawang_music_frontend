@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
@@ -11,6 +12,7 @@ class HomeScreen extends StatefulWidget {
   final List<TrackEntity> tracks;
   final List<TrackEntity> popularTracks;
   final List<OwnerEntity> owners;
+  final List<HeroSlideEntity> heroSlides;
   final String? currentPlayingTrackId;
   final void Function(AlbumEntity) onSelectAlbum;
   final void Function(TrackEntity, List<TrackEntity>) onPlayTrack;
@@ -29,6 +31,7 @@ class HomeScreen extends StatefulWidget {
     required this.tracks,
     required this.popularTracks,
     required this.owners,
+    required this.heroSlides,
     this.currentPlayingTrackId,
     required this.onSelectAlbum,
     required this.onPlayTrack,
@@ -50,6 +53,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   late final AnimationController _pulseController;
   late final Animation<double> _pulseAnimation;
 
+  // ── Hero carousel ──────────────────────────────────────────────────
+  late final PageController _pageController;
+  Timer? _autoplayTimer;
+  int _currentSlide = 0;
+
+  /// Slides to show: admin content when synced, bundled fallback otherwise.
+  List<HeroSlideEntity> get _effectiveSlides => widget.heroSlides.isNotEmpty
+      ? widget.heroSlides
+      : [
+          HeroSlideEntity(
+            id: 'fallback',
+            eyebrow: 'RAWANG HERITAGE MUSIC',
+            title: 'Preserving Our Ancestral Echoes',
+            subtitle: 'Stream, download offline, and discover traditional songs.',
+            durationSeconds: 7,
+          ),
+        ];
+
   @override
   void initState() {
     super.initState();
@@ -60,10 +81,42 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.4).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+    _pageController = PageController();
+    _scheduleAutoplay();
+  }
+
+  @override
+  void didUpdateWidget(HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.heroSlides != oldWidget.heroSlides) {
+      _currentSlide = 0;
+      if (_pageController.hasClients) {
+        _pageController.jumpToPage(0);
+      }
+      _scheduleAutoplay();
+    }
+  }
+
+  void _scheduleAutoplay() {
+    _autoplayTimer?.cancel();
+    final slides = _effectiveSlides;
+    if (slides.length < 2) return;
+    final seconds = slides[_currentSlide.clamp(0, slides.length - 1)].durationSeconds.clamp(3, 60);
+    _autoplayTimer = Timer(Duration(seconds: seconds), () {
+      if (!mounted || !_pageController.hasClients) return;
+      final next = (_currentSlide + 1) % slides.length;
+      _pageController.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeInOut,
+      );
+    });
   }
 
   @override
   void dispose() {
+    _autoplayTimer?.cancel();
+    _pageController.dispose();
     _pulseController.dispose();
     super.dispose();
   }
@@ -77,16 +130,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Hero Cultural Banner
+          // Hero Carousel (16:9, admin-driven with bundled fallback)
           Container(
             margin: const EdgeInsets.all(16),
-            height: 180,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              image: const DecorationImage(
-                image: AssetImage('assets/images/img_rawang_hero_1785383680261.jpg'),
-                fit: BoxFit.cover,
-              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.2),
@@ -95,90 +143,150 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ),
               ],
             ),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    theme.colorScheme.surface.withValues(alpha: 0.9),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    PageView.builder(
+                      controller: _pageController,
+                      itemCount: _effectiveSlides.length,
+                      onPageChanged: (index) {
+                        setState(() => _currentSlide = index);
+                        _scheduleAutoplay();
+                      },
+                      itemBuilder: (context, index) {
+                        final slide = _effectiveSlides[index];
+                        final imageUrl = ApiService.resolveMediaUrl(slide.imageUrl);
+                        return Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            imageUrl.isEmpty
+                                ? Image.asset(
+                                    'assets/images/img_rawang_hero_1785383680261.jpg',
+                                    fit: BoxFit.cover,
+                                  )
+                                : CachedNetworkImage(
+                                    imageUrl: imageUrl,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => Container(
+                                      color: theme.colorScheme.surface,
+                                    ),
+                                    errorWidget: (context, url, error) => Image.asset(
+                                      'assets/images/img_rawang_hero_1785383680261.jpg',
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    theme.colorScheme.surface.withValues(alpha: 0.9),
+                                  ],
+                                ),
+                              ),
+                              padding: const EdgeInsets.all(16),
+                              alignment: Alignment.bottomLeft,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (slide.eyebrow.isNotEmpty)
+                                    Text(
+                                      slide.eyebrow,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: theme.colorScheme.primary,
+                                        letterSpacing: 1,
+                                      ),
+                                    ),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: AnimatedTextKit(
+                                      key: ValueKey('title_${slide.id}'),
+                                      repeatForever: false,
+                                      animatedTexts: [
+                                        ColorizeAnimatedText(
+                                          slide.title,
+                                          speed: const Duration(milliseconds: 500),
+                                          textStyle: const TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          colors: [
+                                            theme.colorScheme.onSurface,
+                                            const Color.fromARGB(204, 51, 170, 3),
+                                            Colors.tealAccent,
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (slide.subtitle.isNotEmpty)
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: AnimatedTextKit(
+                                        key: ValueKey('subtitle_${slide.id}'),
+                                        repeatForever: false,
+                                        animatedTexts: [
+                                          TyperAnimatedText(
+                                            slide.subtitle,
+                                            speed: const Duration(milliseconds: 90),
+                                            textStyle: TextStyle(
+                                              fontSize: 12,
+                                              color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                    if (_effectiveSlides.length > 1)
+                      Positioned(
+                        top: 12,
+                        right: 12,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(_effectiveSlides.length, (index) {
+                            final isActive = index == _currentSlide;
+                            return GestureDetector(
+                              onTap: () {
+                                _pageController.animateToPage(
+                                  index,
+                                  duration: const Duration(milliseconds: 450),
+                                  curve: Curves.easeInOut,
+                                );
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                margin: const EdgeInsets.symmetric(horizontal: 3),
+                                width: isActive ? 20 : 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(3),
+                                  color: isActive
+                                      ? theme.colorScheme.primary
+                                      : Colors.white.withValues(alpha: 0.5),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
                   ],
                 ),
-              ),
-              padding: const EdgeInsets.all(16),
-              alignment: Alignment.bottomLeft,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "RAWANG HERITAGE MUSIC",
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  SizedBox(
-                    width: double.infinity,
-                    child: AnimatedTextKit(
-                      repeatForever: true,
-                      animatedTexts: [
-                        ColorizeAnimatedText(
-                          "Preserving Our Ancestral Echoes",
-                          speed: const Duration(milliseconds: 500),
-                          textStyle: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          colors: [
-                            theme.colorScheme.onSurface, // White
-                            // theme.colorScheme.primary, // Green
-                            const Color.fromARGB(204, 51, 170, 3),
-                            Colors.tealAccent,
-                            // theme.colorScheme.onSurface,
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 36, // Reserve space for 2 lines to prevent vertical jumping
-                    child: AnimatedTextKit(
-                      repeatForever: true,
-                      animatedTexts: [
-                        TyperAnimatedText(
-                          "Stream, download offline, and discover traditional songs.",
-                          speed: const Duration(milliseconds: 90),
-                          textStyle: TextStyle(
-                            fontSize: 12,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                          ),
-                        ),
-                        TyperAnimatedText(
-                          "Shvngbe sv̀ng Pàmvrà",
-                          speed: const Duration(milliseconds: 90),
-                          textStyle: TextStyle(
-                            fontSize: 12,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                          ),
-                        ),
-                        TyperAnimatedText(
-                          "Mvkúnrì ayv́ng hapshì lúnshìe",
-                          speed: const Duration(milliseconds: 90),
-                          textStyle: TextStyle(
-                            fontSize: 12,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
               ),
             ),
           ),

@@ -180,6 +180,7 @@ class MainScreen extends StatelessWidget {
         tracks: viewModel.tracks,
         popularTracks: viewModel.popularTracks,
         owners: viewModel.owners,
+        heroSlides: viewModel.heroSlides,
         currentPlayingTrackId: viewModel.playerEngine.playerState.currentTrack?.id,
         onSelectAlbum: (album) => viewModel.selectHomeAlbum(album),
         onPlayTrack: (track, ctx) => viewModel.playTrack(track, playlistContext: ctx),

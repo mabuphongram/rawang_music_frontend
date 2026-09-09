@@ -38,6 +38,7 @@ class MusicViewModel extends ChangeNotifier {
   List<TrackEntity> favoriteTracks = [];
   List<PlaylistEntity> playlists = [];
   List<TrackEntity> popularTracks = [];
+  List<HeroSlideEntity> heroSlides = [];
 
   // ── Online presence ────────────────────────────────────────────────
   int onlineCount = 0;
@@ -126,6 +127,7 @@ class MusicViewModel extends ChangeNotifier {
     albums = await db.getAllAlbums();
     tracks = await db.getAllTracks();
     owners = await db.getAllOwners();
+    heroSlides = await db.getAllHeroSlides();
     downloadedTracks = await db.getDownloadedTracks();
     favoriteTracks = await db.getFavoriteTracks();
     playlists = await db.getAllPlaylists();
@@ -146,6 +148,10 @@ class MusicViewModel extends ChangeNotifier {
       albums = await db.getAllAlbums();  // read fresh cache
       tracks = await db.getAllTracks();
       owners = await db.getAllOwners();  // read fresh owners from cache
+      heroSlides = (await db.getAllHeroSlides())
+          .where((s) => s.isActive)
+          .toList()
+        ..sort((a, b) => a.order.compareTo(b.order));
       downloadedTracks = await db.getDownloadedTracks();
       favoriteTracks = await db.getFavoriteTracks();
       playlists = await db.getAllPlaylists();

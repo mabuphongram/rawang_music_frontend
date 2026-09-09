@@ -359,8 +359,65 @@ class PlaylistTrackCrossRef {
   }
 }
 
-class ChatMessageEntity {
+class HeroSlideEntity {
   final String id;
+  final String eyebrow;
+  final String title;
+  final String subtitle;
+  final String imageUrl; // relative MinIO key, resolved at runtime
+  final int durationSeconds;
+  final int order;
+  final bool isActive;
+
+  HeroSlideEntity({
+    required this.id,
+    this.eyebrow = '',
+    required this.title,
+    this.subtitle = '',
+    this.imageUrl = '',
+    this.durationSeconds = 6,
+    this.order = 0,
+    this.isActive = true,
+  });
+
+  factory HeroSlideEntity.fromMap(Map<String, dynamic> map) {
+    int asInt(dynamic v, int fallback) {
+      if (v == null) return fallback;
+      if (v is int) return v;
+      if (v is double) return v.toInt();
+      return int.tryParse(v.toString()) ?? fallback;
+    }
+
+    bool asBool(dynamic v) =>
+        v == 1 || v == true || v == '1' || v == 'true' || v == 'True';
+
+    return HeroSlideEntity(
+      id: (map['id'] ?? map['_id'] ?? '').toString(),
+      eyebrow: (map['eyebrow'] ?? '').toString(),
+      title: (map['title'] ?? '').toString(),
+      subtitle: (map['subtitle'] ?? '').toString(),
+      imageUrl: (map['imageUrl'] ?? '').toString(),
+      durationSeconds: asInt(map['durationSeconds'], 6).clamp(3, 60),
+      order: asInt(map['order'], 0),
+      isActive: map.containsKey('isActive') ? asBool(map['isActive']) : true,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'eyebrow': eyebrow,
+      'title': title,
+      'subtitle': subtitle,
+      'imageUrl': imageUrl,
+      'durationSeconds': durationSeconds,
+      'order': order,
+      'isActive': isActive ? 1 : 0,
+    };
+  }
+}
+
+class ChatMessageEntity {  final String id;
   final String senderName;
   final String message;
   final int timestamp;

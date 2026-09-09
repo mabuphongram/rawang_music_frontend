@@ -6,7 +6,7 @@ import 'package:rawang_melodies/data/remote/api_service.dart';
 
 class DatabaseHelper {
   static const _databaseName = "rawang_database.db";
-  static const _databaseVersion = 6;
+  static const _databaseVersion = 7;
 
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
@@ -104,6 +104,22 @@ class DatabaseHelper {
           isVerified INTEGER DEFAULT 0,
           createdAt INTEGER,
           updatedAt INTEGER
+        )
+      ''');
+    }
+
+    if (oldVersion < 7) {
+      // v6 -> v7: add hero_slides table for home 16:9 carousel
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS hero_slides (
+          id TEXT PRIMARY KEY,
+          eyebrow TEXT DEFAULT "",
+          title TEXT,
+          subtitle TEXT DEFAULT "",
+          imageUrl TEXT DEFAULT "",
+          durationSeconds INTEGER DEFAULT 6,
+          slideOrder INTEGER DEFAULT 0,
+          isActive INTEGER DEFAULT 1
         )
       ''');
     }
@@ -211,6 +227,19 @@ class DatabaseHelper {
       )
     ''');
 
+    await db.execute('''
+      CREATE TABLE hero_slides (
+        id TEXT PRIMARY KEY,
+        eyebrow TEXT DEFAULT "",
+        title TEXT,
+        subtitle TEXT DEFAULT "",
+        imageUrl TEXT DEFAULT "",
+        durationSeconds INTEGER DEFAULT 6,
+        slideOrder INTEGER DEFAULT 0,
+        isActive INTEGER DEFAULT 1
+      )
+    ''');
+
     // Initial empty state, will sync from API
     // batch.commit(noResult: true);
   }
@@ -230,6 +259,7 @@ class DatabaseHelper {
       ApiService.fetchPlaylistsRaw(),
       ApiService.fetchChatMessages(),
       ApiService.fetchOwners(),
+      ApiService.fetchHeroSlides(),
     ]);
 
     final apiAlbums = results[0] as List<AlbumEntity>;
@@ -237,6 +267,7 @@ class DatabaseHelper {
     final apiPlaylistsRaw = results[2] as List<Map<String, dynamic>>;
     final apiMessages = results[3] as List<ChatMessageEntity>;
     final apiOwners = results[4] as List<OwnerEntity>;
+    final apiHeroSlides = results[5] as List<HeroSlideEntity>;
 
     final apiPlaylists = apiPlaylistsRaw.map((j) => PlaylistEntity.fromMap(j)).toList();
 
@@ -268,6 +299,19 @@ class DatabaseHelper {
       }
       for (var msg in apiMessages) {
         batch.insert('chat_messages', msg.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      for (var slide in apiHeroSlides) {
+        final m = slide.toMap();
+        batch.insert('hero_slides', {
+          'id': m['id'],
+          'eyebrow': m['eyebrow'],
+          'title': m['title'],
+          'subtitle': m['subtitle'],
+          'imageUrl': m['imageUrl'],
+          'durationSeconds': m['durationSeconds'],
+          'slideOrder': m['order'],
+          'isActive': m['isActive'],
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
       }
 
       // Merge tracks carefully to preserve user's downloaded/favorite/playCount state
@@ -315,8 +359,18 @@ class DatabaseHelper {
     return maps.map((e) => AlbumEntity.fromMap(e)).toList();
   }
 
-  Future<List<OwnerEntity>> getAllOwners() async {
+  Future<List<HeroSlideEntity>> getAllHeroSlides() async {
     final db = await database;
+    final maps = await db.query('hero_slides', orderBy: 'slideOrder ASC');
+    return maps.map((e) {
+      final m = Map<String, dynamic>.from(e);
+      m['order'] = m['slideOrder'] ?? 0;
+      m.remove('slideOrder');
+      return HeroSlideEntity.fromMap(m);
+    }).toList();
+  }
+
+  Future<List<OwnerEntity>> getAllOwners() async {    final db = await database;
     final maps = await db.query('owners');
     return maps.map((e) {
       // Merge flat social columns into nested map for fromMap
