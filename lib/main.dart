@@ -8,6 +8,7 @@ import 'package:rawang_melodies/ui/components/mini_player_bar.dart';
 import 'package:rawang_melodies/ui/screens/album_detail_screen.dart';
 import 'package:rawang_melodies/ui/screens/albums_screen.dart';
 import 'package:rawang_melodies/ui/screens/community_chat_screen.dart';
+import 'package:rawang_melodies/ui/screens/contribute_screen.dart';
 import 'package:rawang_melodies/ui/screens/home_screen.dart';
 import 'package:rawang_melodies/ui/screens/offline_screen.dart';
 import 'package:rawang_melodies/ui/screens/owners_screen.dart';
@@ -157,12 +158,12 @@ class MainScreen extends StatelessWidget {
       viewModel.homeSelectedAlbum != null
           ? AlbumDetailScreen(
               album: viewModel.homeSelectedAlbum!,
-              tracks: viewModel.tracks.where((t) => t.albumId == viewModel.homeSelectedAlbum!.id).toList(),
+              tracks: viewModel.tracks.where((t) => t.albumIds.contains(viewModel.homeSelectedAlbum!.id)).toList(),
               currentPlayingTrackId: viewModel.playerEngine.playerState.currentTrack?.id,
               onBack: () => viewModel.selectHomeAlbum(null),
               onPlayTrack: (track, ctx) => viewModel.playTrack(track, playlistContext: ctx),
               onPlayAll: () {
-                final albumTracks = viewModel.tracks.where((t) => t.albumId == viewModel.homeSelectedAlbum!.id).toList();
+                final albumTracks = viewModel.tracks.where((t) => t.albumIds.contains(viewModel.homeSelectedAlbum!.id)).toList();
                 if (albumTracks.isNotEmpty) {
                   viewModel.playTrack(albumTracks.first, playlistContext: albumTracks);
                 }
@@ -192,7 +193,9 @@ class MainScreen extends StatelessWidget {
         onShare: (track) => showShareDialog(context, track),
         onlineCount: viewModel.onlineCount,
         onOpenAddSongDialog: () {
-          showAddSongDialog(context, viewModel.contributeTrack);
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const ContributeScreen()),
+          );
         },
         onFilterByOwner: (filter) {
           if (filter == "ALL") {

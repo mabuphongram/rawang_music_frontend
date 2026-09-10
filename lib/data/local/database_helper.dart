@@ -6,7 +6,7 @@ import 'package:rawang_melodies/data/remote/api_service.dart';
 
 class DatabaseHelper {
   static const _databaseName = "rawang_database.db";
-  static const _databaseVersion = 7;
+  static const _databaseVersion = 8;
 
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
@@ -121,6 +121,23 @@ class DatabaseHelper {
           slideOrder INTEGER DEFAULT 0,
           isActive INTEGER DEFAULT 1
         )
+      ''');
+    }
+
+    if (oldVersion < 8) {
+      // v7 -> v8: many-to-many track<->album membership (a song in multiple albums)
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS track_albums (
+          trackId TEXT,
+          albumId TEXT,
+          PRIMARY KEY (trackId, albumId)
+        )
+      ''');
+      // Backfill memberships from the legacy single albumId column
+      await db.execute('''
+        INSERT OR IGNORE INTO track_albums (trackId, albumId)
+        SELECT id, albumId FROM tracks
+        WHERE albumId IS NOT NULL AND albumId != ''
       ''');
     }
   }
@@ -240,6 +257,14 @@ class DatabaseHelper {
       )
     ''');
 
+    await db.execute('''
+      CREATE TABLE track_albums (
+        trackId TEXT,
+        albumId TEXT,
+        PRIMARY KEY (trackId, albumId)
+      )
+    ''');
+
     // Initial empty state, will sync from API
     // batch.commit(noResult: true);
   }
@@ -329,7 +354,14 @@ class DatabaseHelper {
             playCount: existing.playCount,
           );
         }
-        batch.insert('tracks', newTrack.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+        final row = Map<String, dynamic>.from(newTrack.toMap())..remove('albumIds');
+        batch.insert('tracks', row, conflictAlgorithm: ConflictAlgorithm.replace);
+        // Refresh many-to-many album memberships for this track
+        await txn.delete('track_albums', where: 'trackId = ?', whereArgs: [newTrack.id]);
+        for (final aid in newTrack.albumIds) {
+          batch.insert('track_albums', {'trackId': newTrack.id, 'albumId': aid},
+              conflictAlgorithm: ConflictAlgorithm.replace);
+        }
       }
 
       // Sync playlist_tracks from backend trackIds
@@ -353,6 +385,39 @@ class DatabaseHelper {
   }
 
   // DAO equivalents
+  /// Attach many-to-many album memberships to tracks in a single query.
+  Future<List<TrackEntity>> _withAlbumIds(Database db, List<TrackEntity> tracks) async {
+    if (tracks.isEmpty) return tracks;
+    final rows = await db.query('track_albums');
+    final Map<String, List<String>> byTrack = {};
+    for (final r in rows) {
+      final tid = (r['trackId'] ?? '').toString();
+      final aid = (r['albumId'] ?? '').toString();
+      if (tid.isEmpty || aid.isEmpty) continue;
+      byTrack.putIfAbsent(tid, () => []).add(aid);
+    }
+    return tracks.map((t) {
+      final ids = byTrack[t.id];
+      if (ids == null || ids.isEmpty) return t;
+      return t.copyWith(albumId: ids.first, albumIds: ids);
+    }).toList();
+  }
+
+  Map<String, dynamic> _trackRow(TrackEntity track) {
+    final row = Map<String, dynamic>.from(track.toMap());
+    row.remove('albumIds'); // junction table carries the list; SQLite has no arrays
+    return row;
+  }
+
+  Future<void> _writeTrackAlbums(Database db, String trackId, List<String> albumIds) async {
+    await db.delete('track_albums', where: 'trackId = ?', whereArgs: [trackId]);
+    final batch = db.batch();
+    for (final aid in albumIds) {
+      batch.insert('track_albums', {'trackId': trackId, 'albumId': aid},
+          conflictAlgorithm: ConflictAlgorithm.replace);
+    }
+    await batch.commit(noResult: true);
+  }
   Future<List<AlbumEntity>> getAllAlbums() async {
     final db = await database;
     final maps = await db.query('albums');
@@ -390,25 +455,29 @@ class DatabaseHelper {
   Future<List<TrackEntity>> getAllTracks() async {
     final db = await database;
     final maps = await db.query('tracks');
-    return maps.map((e) => TrackEntity.fromMap(e)).toList();
+    return _withAlbumIds(db, maps.map((e) => TrackEntity.fromMap(e)).toList());
   }
 
   Future<List<TrackEntity>> getTracksByAlbum(String albumId) async {
     final db = await database;
-    final maps = await db.query('tracks', where: 'albumId = ?', whereArgs: [albumId]);
-    return maps.map((e) => TrackEntity.fromMap(e)).toList();
+    final maps = await db.rawQuery('''
+      SELECT t.* FROM tracks t
+      INNER JOIN track_albums ta ON t.id = ta.trackId
+      WHERE ta.albumId = ?
+    ''', [albumId]);
+    return _withAlbumIds(db, maps.map((e) => TrackEntity.fromMap(e)).toList());
   }
 
   Future<List<TrackEntity>> getDownloadedTracks() async {
     final db = await database;
     final maps = await db.query('tracks', where: 'isDownloaded = 1');
-    return maps.map((e) => TrackEntity.fromMap(e)).toList();
+    return _withAlbumIds(db, maps.map((e) => TrackEntity.fromMap(e)).toList());
   }
 
   Future<List<TrackEntity>> getFavoriteTracks() async {
     final db = await database;
     final maps = await db.query('tracks', where: 'isFavorite = 1');
-    return maps.map((e) => TrackEntity.fromMap(e)).toList();
+    return _withAlbumIds(db, maps.map((e) => TrackEntity.fromMap(e)).toList());
   }
 
   Future<void> updateDownloadStatus(String trackId, bool isDownloaded) async {
@@ -434,7 +503,7 @@ class DatabaseHelper {
       INNER JOIN playlist_tracks pt ON t.id = pt.trackId
       WHERE pt.playlistId = ?
     ''', [playlistId]);
-    return maps.map((e) => TrackEntity.fromMap(e)).toList();
+    return _withAlbumIds(db, maps.map((e) => TrackEntity.fromMap(e)).toList());
   }
   
   Future<void> insertPlaylist(PlaylistEntity playlist) async {
@@ -465,7 +534,8 @@ class DatabaseHelper {
   
   Future<void> insertTrack(TrackEntity track) async {
     final db = await database;
-    await db.insert('tracks', track.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert('tracks', _trackRow(track), conflictAlgorithm: ConflictAlgorithm.replace);
+    await _writeTrackAlbums(db, track.id, track.albumIds);
   }
 
   Future<void> insertAlbum(AlbumEntity album) async {

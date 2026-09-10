@@ -97,7 +97,7 @@ class AlbumsScreen extends StatelessWidget {
                     itemCount: albums.length,
                     itemBuilder: (context, index) {
                       final album = albums[index];
-                      final count = tracks.where((t) => t.albumId == album.id).length;
+                      final count = tracks.where((t) => t.albumIds.contains(album.id)).length;
                       return AlbumCard(
                         album: album,
                         trackCount: count,

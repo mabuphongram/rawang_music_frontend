@@ -169,7 +169,8 @@ class AlbumEntity {
 
 class TrackEntity {
   final String id;
-  final String albumId;
+  final String albumId; // primary album (first of albumIds) — compat
+  final List<String> albumIds; // all albums this song belongs to
   final String title;
   final String rawangTitle;
   final String artistName;
@@ -188,6 +189,7 @@ class TrackEntity {
   TrackEntity({
     required this.id,
     required this.albumId,
+    List<String>? albumIds,
     required this.title,
     required this.rawangTitle,
     required this.artistName,
@@ -202,11 +204,12 @@ class TrackEntity {
     this.playCount = 0,
     this.hasKaraoke = false,
     this.karaokeAudioUrl,
-  });
+  }) : albumIds = albumIds ?? [albumId];
 
   TrackEntity copyWith({
     String? id,
     String? albumId,
+    List<String>? albumIds,
     String? title,
     String? rawangTitle,
     String? artistName,
@@ -225,6 +228,7 @@ class TrackEntity {
     return TrackEntity(
       id: id ?? this.id,
       albumId: albumId ?? this.albumId,
+      albumIds: albumIds ?? this.albumIds,
       title: title ?? this.title,
       rawangTitle: rawangTitle ?? this.rawangTitle,
       artistName: artistName ?? this.artistName,
@@ -257,9 +261,24 @@ class TrackEntity {
         ? null
         : rawKaraokeUrl.toString();
 
+    // albumIds may arrive as a JSON list (API), a CSV string (SQLite join),
+    // or be absent (legacy) — fall back to the single albumId.
+    List<String> parsedAlbumIds = [];
+    final rawAlbumIds = map['albumIds'];
+    if (rawAlbumIds is List) {
+      parsedAlbumIds = rawAlbumIds.map((e) => e.toString()).toList();
+    } else if (rawAlbumIds is String && rawAlbumIds.isNotEmpty) {
+      parsedAlbumIds = rawAlbumIds.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    }
+    final primaryAlbumId = (map['albumId'] ?? '').toString();
+    if (parsedAlbumIds.isEmpty && primaryAlbumId.isNotEmpty) {
+      parsedAlbumIds = [primaryAlbumId];
+    }
+
     return TrackEntity(
       id: (map['id'] ?? map['_id'] ?? '').toString(),
-      albumId: (map['albumId'] ?? '').toString(),
+      albumId: parsedAlbumIds.isNotEmpty ? parsedAlbumIds.first : primaryAlbumId,
+      albumIds: parsedAlbumIds,
       title: (map['title'] ?? '').toString(),
       rawangTitle: (map['rawangTitle'] ?? '').toString(),
       artistName: (map['artistName'] ?? '').toString(),
@@ -281,6 +300,7 @@ class TrackEntity {
     return {
       'id': id,
       'albumId': albumId,
+      'albumIds': albumIds,
       'title': title,
       'rawangTitle': rawangTitle,
       'artistName': artistName,

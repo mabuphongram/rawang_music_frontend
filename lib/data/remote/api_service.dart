@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:rawang_melodies/data/local/entity/entities.dart';
+import 'package:rawang_melodies/data/remote/auth_service.dart';
 
 class ApiService {
   static String get baseUrl => dotenv.env['API_BASE_URL'] ?? 'http://192.168.90.31:5000/api';
@@ -258,6 +259,47 @@ class ApiService {
     } catch (e) {
       print('Error creating track: $e');
       return false;
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // Community contributions (pending admin review)
+  // ─────────────────────────────────────────────
+  static const int maxContributionFileBytes = 15 * 1024 * 1024;
+
+  static Future<void> submitContribution({
+    required String title,
+    required String artistName,
+    required String composerName,
+    required int durationSeconds,
+    required String audioPath,
+    String? karaokePath,
+  }) async {
+    final token = await AuthService.getToken();
+    if (token == null) throw Exception('Please log in first');
+
+    final req = http.MultipartRequest('POST', Uri.parse('$baseUrl/contributions'));
+    req.headers['Authorization'] = 'Bearer $token';
+    req.fields['title'] = title;
+    req.fields['artistName'] = artistName;
+    req.fields['composerName'] = composerName;
+    req.fields['durationSeconds'] = durationSeconds.toString();
+    req.files.add(await http.MultipartFile.fromPath('audio', audioPath));
+    if (karaokePath != null) {
+      req.files.add(await http.MultipartFile.fromPath('karaoke', karaokePath));
+    }
+
+    final streamed = await req.send().timeout(const Duration(seconds: 120));
+    final body = await http.Response.fromStream(streamed);
+    if (streamed.statusCode != 201) {
+      String message = 'Upload failed (${streamed.statusCode})';
+      try {
+        final decoded = json.decode(body.body);
+        if (decoded is Map && decoded['error'] != null) {
+          message = decoded['error'].toString();
+        }
+      } catch (_) {}
+      throw Exception(message);
     }
   }
 }

@@ -379,7 +379,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               separatorBuilder: (_, index) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
                 final album = widget.albums[index];
-                final count = widget.tracks.where((t) => t.albumId == album.id).length;
+                final count = widget.tracks.where((t) => t.albumIds.contains(album.id)).length;
                 return AlbumCard(
                   width: 160,
                   album: album,

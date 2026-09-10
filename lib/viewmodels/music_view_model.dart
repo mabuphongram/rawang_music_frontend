@@ -21,7 +21,6 @@ class MusicViewModel extends ChangeNotifier {
   AlbumEntity? homeSelectedAlbum;
   // Legacy playlist state - retained for DB but UI discarded
   PlaylistEntity? selectedPlaylist;
-  bool isAddSongDialogOpen = false;
   bool isCreatePlaylistDialogOpen = false;
   TrackEntity? trackToAddToPlaylist;
   TrackEntity? trackToShare;
@@ -69,7 +68,7 @@ class MusicViewModel extends ChangeNotifier {
 
   List<TrackEntity> get currentAlbumTracks {
     if (selectedAlbum == null) return [];
-    return tracks.where((t) => t.albumId == selectedAlbum!.id).toList();
+    return tracks.where((t) => t.albumIds.contains(selectedAlbum!.id)).toList();
   }
 
   List<TrackEntity> selectedPlaylistTracks = [];
@@ -271,11 +270,6 @@ class MusicViewModel extends ChangeNotifier {
     await _loadData();
   }
 
-  void setAddSongDialogOpen(bool open) {
-    isAddSongDialogOpen = open;
-    notifyListeners();
-  }
-
   void setCreatePlaylistDialogOpen(bool open) {
     isCreatePlaylistDialogOpen = open;
     notifyListeners();
@@ -324,54 +318,5 @@ class MusicViewModel extends ChangeNotifier {
 
   void toggleKaraokeMode() {
     playerEngine.toggleKaraokeMode();
-  }
-
-  Future<void> contributeTrack(
-    String title,
-    String rawangTitle,
-    String artistName,
-    String albumTitle,
-    OwnerType ownerType,
-    String genre,
-    String lyrics,
-    bool hasKaraoke,
-  ) async {
-    final albumId = "alb_custom_${DateTime.now().millisecondsSinceEpoch}";
-    final trackId = "trk_custom_${DateTime.now().millisecondsSinceEpoch}";
-
-    final newAlbum = AlbumEntity(
-      id: albumId,
-      title: albumTitle.isEmpty ? "$title Single" : albumTitle,
-      ownerType: ownerType.name,
-      ownerName: artistName.isEmpty ? "Community Contributor" : artistName,
-      coverImage: '',
-      releaseYear: 2026,
-      description: "Preserved community contribution",
-      trackCount: 1,
-    );
-
-    final newTrack = TrackEntity(
-      id: trackId,
-      albumId: albumId,
-      title: title,
-      rawangTitle: rawangTitle,
-      artistName: artistName.isEmpty ? "Community Contributor" : artistName,
-      albumName: albumTitle.isEmpty ? "$title Single" : albumTitle,
-      ownerType: ownerType.name,
-      durationSeconds: 210,
-      audioUrl: "synth:440:600",
-      lyrics: lyrics.isEmpty ? "[Community Preserved Rawang Lyrics]" : lyrics,
-      genre: genre.isEmpty ? "Cultural Preservation" : genre,
-      isDownloaded: true,
-      hasKaraoke: hasKaraoke,
-      karaokeAudioUrl: hasKaraoke ? "synth:karaoke:440:600" : null,
-    );
-
-    await ApiService.createAlbum(newAlbum);
-    await ApiService.createTrack(newTrack);
-    await db.insertAlbum(newAlbum);
-    await db.insertTrack(newTrack);
-    setAddSongDialogOpen(false);
-    await _loadData();
   }
 }
