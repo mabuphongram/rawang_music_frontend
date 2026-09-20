@@ -101,9 +101,37 @@ class TrackListItem extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (track.hasKaraoke)
+                      if (track.lyrics.trim().isNotEmpty)
                         Container(
                           margin: const EdgeInsets.only(left: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.secondaryContainer,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.lyrics_outlined,
+                                size: 9,
+                                color: theme.colorScheme.onSecondaryContainer,
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                "Lyrics",
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.onSecondaryContainer,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (track.hasKaraoke)
+                        Container(
+                          margin: const EdgeInsets.only(left: 4),
                           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.tertiaryContainer,

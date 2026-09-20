@@ -1,6 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
-/// Reuses splash screen's heritage background image
+/// Reuses the dedicated auth heritage background image
 class AuthBackground extends StatelessWidget {
   final Widget child;
   const AuthBackground({super.key, required this.child});
@@ -10,10 +11,16 @@ class AuthBackground extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.asset(
-          'assets/images/splash screen.png',
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => ColoredBox(color: Theme.of(context).colorScheme.primary),
+        ImageFiltered(
+          imageFilter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+          child: Opacity(
+            opacity: 0.9,
+            child: Image.asset(
+              'assets/images/auth-background.png',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => ColoredBox(color: Theme.of(context).colorScheme.primary),
+            ),
+          ),
         ),
         const DecoratedBox(
           decoration: BoxDecoration(

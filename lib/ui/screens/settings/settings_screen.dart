@@ -34,7 +34,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case SubscriptionPlan.oneYear:
         return '1 Year';
       default:
-        return 'Free 4 years';
+        return 'Free 2 years';
     }
   }
 
@@ -173,7 +173,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               Row(children: [Icon(Icons.info_outline, size: 18, color: theme.colorScheme.primary), const SizedBox(width: 6), Text('Subscription', style: TextStyle(fontWeight: FontWeight.w700, color: theme.colorScheme.onSurface))]),
               const SizedBox(height: 6),
-              const Text('Free for 3-4 years for ~1000 users. After that 1m/3m/1y paid via bank transfer - admin activates in portal.', style: TextStyle(fontSize: 12, height: 1.4)),
+              const Text('Free for 2 years for ~1000 users. After that 1m/3m/1y paid via bank transfer - admin activates in portal.', style: TextStyle(fontSize: 12, height: 1.4)),
               const SizedBox(height: 10),
               SizedBox(width: double.infinity, child: OutlinedButton.icon(icon: const Icon(Icons.support_agent, size: 18), label: const Text('Contact admin to renew'), onPressed: _contactAdmin, style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))))),
             ],

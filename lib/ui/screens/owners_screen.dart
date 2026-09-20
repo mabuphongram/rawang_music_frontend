@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
 import 'package:rawang_melodies/data/remote/api_service.dart';
+import 'package:rawang_melodies/ui/screens/owner_request_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class OwnersScreen extends StatefulWidget {
@@ -76,6 +77,22 @@ class _OwnersScreenState extends State<OwnersScreen>
                         ),
                       ),
                     ],
+                  ),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const OwnerRequestScreen()),
+                    ),
+                    icon: Icon(Icons.person_add_alt,
+                        size: 16, color: theme.colorScheme.primary),
+                    label: Text(
+                      'Join as artist',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -178,7 +195,7 @@ class _OwnerGrid extends StatelessWidget {
         crossAxisCount: 2,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 0.62,
+        childAspectRatio: 0.75,
       ),
       itemCount: owners.length,
       itemBuilder: (context, index) =>
@@ -201,12 +218,10 @@ class _OwnerCard extends StatelessWidget {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
-  String _socialText(String url, String prefix) {
-    if (url.isEmpty) return prefix;
-    // strip https://www. for display
-    return url
-        .replaceFirst(RegExp(r'https?://(www\.)?'), '')
-        .replaceAll(RegExp(r'/$'), '');
+  Future<void> _callPhone() async {
+    if (owner.phone.isEmpty) return;
+    final uri = Uri(scheme: 'tel', path: owner.phone.replaceAll(RegExp(r'[^0-9+]'), ''));
+    await launchUrl(uri);
   }
 
   @override
@@ -214,9 +229,10 @@ class _OwnerCard extends StatelessWidget {
     final avatarUrl = ApiService.resolveMediaUrl(owner.avatarUrl);
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
+    final socialIcons = _socialIcons(context);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
@@ -322,89 +338,114 @@ class _OwnerCard extends StatelessWidget {
           ),
 
           const SizedBox(height: 10),
-          Divider(color: theme.colorScheme.onSurface.withValues(alpha: 0.08), height: 1),
-          const SizedBox(height: 10),
+          if (socialIcons.isNotEmpty) ...[
+            Divider(color: theme.colorScheme.onSurface.withValues(alpha: 0.08), height: 1),
+            const SizedBox(height: 10),
 
-          // ── Social Links ───────────────────────────────────────────
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _SocialRow(
-                icon: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF0000),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Icon(Icons.play_arrow_rounded,
-                      size: 12, color: Colors.white),
-                ),
-                text: _socialText(
-                    owner.socialLinks.youtube, 'youtube.com/channel'),
-                available: owner.socialLinks.youtube.isNotEmpty,
-                onTap: () => _launchUrl(owner.socialLinks.youtube),
-              ),
-              const SizedBox(height: 5),
-              _SocialRow(
-                icon: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1877F2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'f',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 12,
-                        height: 1,
-                      ),
-                    ),
-                  ),
-                ),
-                text: _socialText(
-                    owner.socialLinks.facebook, 'facebook.com/page'),
-                available: owner.socialLinks.facebook.isNotEmpty,
-                onTap: () => _launchUrl(owner.socialLinks.facebook),
-              ),
-              const SizedBox(height: 5),
-              _SocialRow(
-                icon: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15)),
-                  ),
-                  child: const Icon(Icons.tiktok, size: 11, color: Colors.white),
-                ),
-                text: _socialText(
-                    owner.socialLinks.tiktok, 'tiktok.com/@user'),
-                available: owner.socialLinks.tiktok.isNotEmpty,
-                onTap: () => _launchUrl(owner.socialLinks.tiktok),
-              ),
-              const SizedBox(height: 5),
-              _SocialRow(
-                icon: Icon(Icons.phone_outlined,
-                    size: 15,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant),
-                text: owner.phone.isNotEmpty
-                    ? owner.phone
-                    : '+95 9 --- --- ---',
-                available: owner.phone.isNotEmpty,
-                onTap: () {},
-              ),
-            ],
-          ),
+            // ── Social icons (only available ones, horizontal) ─────────
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: socialIcons,
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  /// Builds tappable brand icons only for links that actually exist.
+  /// Artists without links (e.g. deceased) show no icons at all.
+  List<Widget> _socialIcons(BuildContext context) {
+    final icons = <Widget>[];
+    void add(Widget icon) {
+      if (icons.isNotEmpty) icons.add(const SizedBox(width: 8));
+      icons.add(icon);
+    }
+
+    Widget brandButton({required Widget child, required String tooltip, required VoidCallback onTap}) {
+      return Tooltip(
+        message: tooltip,
+        child: GestureDetector(
+          onTap: onTap,
+          child: SizedBox(width: 24, height: 24, child: child),
+        ),
+      );
+    }
+
+    if (owner.socialLinks.youtube.isNotEmpty) {
+      add(
+        brandButton(
+          tooltip: 'YouTube',
+          onTap: () => _launchUrl(owner.socialLinks.youtube),
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF0000),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.play_arrow_rounded, size: 15, color: Colors.white),
+          ),
+        ),
+      );
+    }
+    if (owner.socialLinks.facebook.isNotEmpty) {
+      add(
+        brandButton(
+          tooltip: 'Facebook',
+          onTap: () => _launchUrl(owner.socialLinks.facebook),
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF1877F2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Center(
+              child: Text(
+                'f',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                  height: 1,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    if (owner.socialLinks.tiktok.isNotEmpty) {
+      add(
+        brandButton(
+          tooltip: 'TikTok',
+          onTap: () => _launchUrl(owner.socialLinks.tiktok),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15)),
+            ),
+            child: const Icon(Icons.tiktok, size: 12, color: Colors.white),
+          ),
+        ),
+      );
+    }
+    if (owner.phone.isNotEmpty) {
+      add(
+        brandButton(
+          tooltip: owner.phone,
+          onTap: _callPhone,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(Icons.phone_outlined,
+                size: 12, color: Theme.of(context).colorScheme.primary),
+          ),
+        ),
+      );
+    }
+    return icons;
   }
 
   Widget _buildInitials(BuildContext context) {
@@ -430,52 +471,6 @@ class _OwnerCard extends StatelessWidget {
           initials.isEmpty ? '?' : initials,
           style: TextStyle(
               color: theme.colorScheme.onPrimary, fontWeight: FontWeight.w800, fontSize: 22),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-class _SocialRow extends StatelessWidget {
-  final Widget icon;
-  final String text;
-  final bool available;
-  final VoidCallback onTap;
-
-  const _SocialRow({
-    required this.icon,
-    required this.text,
-    required this.available,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: available ? onTap : null,
-      child: Opacity(
-        opacity: available ? 1.0 : 0.3,
-        child: Row(
-          children: [
-            icon,
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                text,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: available
-                      ? theme.colorScheme.onSurface.withValues(alpha: 0.8)
-                      : theme.colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );

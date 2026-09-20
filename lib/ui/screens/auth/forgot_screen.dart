@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rawang_melodies/ui/components/auth_background.dart';
+import 'package:rawang_melodies/ui/components/glass_auth.dart';
+import 'package:rawang_melodies/ui/components/support_contact.dart';
 import 'package:rawang_melodies/viewmodels/auth_view_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -52,24 +54,23 @@ class _ForgotScreenState extends State<ForgotScreen> {
               const SizedBox(height: 6),
               const Text('We will help you reset via admin', style: TextStyle(color: Colors.white70)),
               const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 16, offset: const Offset(0, 8))]),
+              GlassCard(
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(Icons.lock_reset, size: 48, color: Color(0xFF6B7280)),
+                      const Icon(Icons.lock_reset, size: 48, color: Colors.white70),
                       const SizedBox(height: 12),
-                      const Text('Enter your phone', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                      const Text('Enter your phone', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Colors.white)),
                       const SizedBox(height: 6),
-                      const Text('Admin will reset within 24h.\nIf you added email, we can send a link.', textAlign: TextAlign.center, style: TextStyle(color: Colors.black54, fontSize: 13)),
+                      const Text('Admin will reset within 24h.\nIf you added email, we can send a link.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 13)),
                       const SizedBox(height: 18),
                       TextFormField(
                         controller: _phoneCtrl,
                         keyboardType: TextInputType.phone,
-                        decoration: const InputDecoration(labelText: 'Phone', prefixIcon: Icon(Icons.phone), hintText: '09xxxxxxxx'),
+                        style: glassTextStyle,
+                        decoration: glassInput(label: 'Phone', prefix: Icons.phone, hint: '09xxxxxxxx'),
                         validator: (v) => (v == null || v.trim().length < 7) ? 'Enter valid phone' : null,
                       ),
                       const SizedBox(height: 18),

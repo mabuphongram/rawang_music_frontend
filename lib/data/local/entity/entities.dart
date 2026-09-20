@@ -514,6 +514,22 @@ class UserEntity {
       subscriptionStatus == SubscriptionStatus.active &&
       DateTime.now().millisecondsSinceEpoch < subscriptionExpiresAt;
 
+  /// Days past expiry (0 while still active).
+  int get daysOverdue {
+    final diff = DateTime.now().millisecondsSinceEpoch - subscriptionExpiresAt;
+    if (diff <= 0) return 0;
+    return (diff / 86400000).ceil();
+  }
+
+  /// Grace window after time-expiry with full access + banner.
+  /// Admin-suspended accounts (status != active, date still future) skip grace.
+  static const graceDays = 7;
+  bool get inGracePeriod {
+    if (isSubscriptionActive) return false;
+    if (DateTime.now().millisecondsSinceEpoch < subscriptionExpiresAt) return false;
+    return daysOverdue <= graceDays;
+  }
+
   bool get isFreeTier => subscriptionPlan == SubscriptionPlan.free;
 
   factory UserEntity.fromMap(Map<String, dynamic> map) {

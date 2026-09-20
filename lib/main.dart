@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+import 'package:rawang_melodies/data/local/entity/entities.dart';
 import 'package:rawang_melodies/player/audio_player_engine.dart';
 import 'package:rawang_melodies/ui/components/dialogs.dart';
 import 'package:rawang_melodies/ui/components/full_screen_player_modal.dart';
@@ -14,6 +15,7 @@ import 'package:rawang_melodies/ui/screens/offline_screen.dart';
 import 'package:rawang_melodies/ui/screens/owners_screen.dart';
 import 'package:rawang_melodies/ui/screens/settings/settings_screen.dart';
 import 'package:rawang_melodies/ui/screens/auth/auth_gate.dart';
+import 'package:rawang_melodies/ui/screens/auth/login_screen.dart';
 import 'package:rawang_melodies/ui/screens/splash_screen.dart';
 import 'package:rawang_melodies/ui/theme.dart';
 import 'package:rawang_melodies/viewmodels/auth_view_model.dart';
@@ -57,11 +59,52 @@ class RawangMusicApp extends StatelessWidget {
 class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
 
+  void _showLoginPrompt(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Login required'),
+        content: const Text(
+          'Streaming needs a free account (2 years free). Log in or register to keep listening.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Later'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => LoginScreen(
+                    onLoginSuccess: () => Navigator.of(context).pop(),
+                    onGuest: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              );
+            },
+            child: const Text('Login / Register'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final musicViewModel = context.watch<MusicViewModel>();
     final chatViewModel = context.watch<ChatViewModel>();
+    final authViewModel = context.watch<AuthViewModel>();
     final playerState = musicViewModel.playerEngine.playerState;
+
+    // Paywall: guests can browse but streaming needs a (free) account.
+    final engine = musicViewModel.playerEngine;
+    engine.requireLogin = !authViewModel.isLoggedIn;
+    engine.onBlockedPlay = () => _showLoginPrompt(context);
+
+    final user = authViewModel.currentUser;
+    final inGrace = user != null && !user.isSubscriptionActive && user.inGracePeriod;
 
     String? miniPlayerCoverImage;
     if (playerState.currentTrack != null) {
@@ -77,6 +120,21 @@ class MainScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
+            if (inGrace)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade700,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Subscription expired — renew within ${UserEntity.graceDays - user!.daysOverdue} day(s) to keep listening.',
+                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             Expanded(
               // IndexedStack keeps all screens alive in the widget tree.
               // Switching tabs only changes which child is visible — no rebuilds,

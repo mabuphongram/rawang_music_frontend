@@ -222,8 +222,15 @@ class ApiService {
   // ─────────────────────────────────────────────
   static Future<void> incrementPlayCount(String trackId) async {
     try {
+      // Logged-in plays carry the token so the backend records a verified
+      // PlayEvent (1/user/track/day) for owner earnings. Guests still
+      // move the raw popularity counter.
+      final token = await AuthService.getToken();
       await http
-          .post(Uri.parse('$baseUrl/tracks/$trackId/play'))
+          .post(
+            Uri.parse('$baseUrl/tracks/$trackId/play'),
+            headers: token == null ? null : {'Authorization': 'Bearer $token'},
+          )
           .timeout(const Duration(seconds: 5));
     } catch (e) {
       // Fire-and-forget — do not block playback on network errors
@@ -259,6 +266,45 @@ class ApiService {
     } catch (e) {
       print('Error creating track: $e');
       return false;
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // Owner onboarding requests (pending admin review)
+  // ─────────────────────────────────────────────
+  static const int maxAvatarFileBytes = 5 * 1024 * 1024;
+
+  static Future<void> submitOwnerRequest({
+    required String name,
+    required String ownerModel,
+    required String phone,
+    required String description,
+    required String requesterName,
+    required String requesterPhone,
+    required List<String> videoLinks,
+    required String avatarPath,
+  }) async {
+    final req = http.MultipartRequest('POST', Uri.parse('$baseUrl/owner-requests'));
+    req.fields['name'] = name;
+    req.fields['ownerModel'] = ownerModel;
+    req.fields['phone'] = phone;
+    req.fields['description'] = description;
+    req.fields['requesterName'] = requesterName;
+    req.fields['requesterPhone'] = requesterPhone;
+    req.fields['videoLinks'] = json.encode(videoLinks);
+    req.files.add(await http.MultipartFile.fromPath('avatar', avatarPath));
+
+    final streamed = await req.send().timeout(const Duration(seconds: 60));
+    final body = await http.Response.fromStream(streamed);
+    if (streamed.statusCode != 201) {
+      String message = 'Request failed (${streamed.statusCode})';
+      try {
+        final decoded = json.decode(body.body);
+        if (decoded is Map && decoded['error'] != null) {
+          message = decoded['error'].toString();
+        }
+      } catch (_) {}
+      throw Exception(message);
     }
   }
 

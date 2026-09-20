@@ -68,6 +68,11 @@ class AudioPlayerEngine extends ChangeNotifier {
   /// Set this from outside (e.g. MusicViewModel) to react to completion.
   void Function(TrackEntity track)? onTrackCompleted;
 
+  /// Paywall gate, driven by MainScreen from AuthViewModel.
+  /// When true, playTrack() refuses and fires onBlockedPlay instead.
+  bool requireLogin = false;
+  VoidCallback? onBlockedPlay;
+
   PlayerStateData get playerState => _playerState;
 
   Timer? _synthTimer;
@@ -107,6 +112,11 @@ class AudioPlayerEngine extends ChangeNotifier {
   }
 
   void playTrack(TrackEntity track, {List<TrackEntity>? queue}) {
+    // Paywall: guests must log in (free 2y) before streaming.
+    if (requireLogin) {
+      onBlockedPlay?.call();
+      return;
+    }
     final activeQueue = queue ?? [track];
     final index = activeQueue.indexWhere((t) => t.id == track.id);
     final safeIndex = index >= 0 ? index : 0;

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:rawang_melodies/main.dart';
 import 'package:rawang_melodies/viewmodels/auth_view_model.dart';
 import 'login_screen.dart';
+import 'renew_screen.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
@@ -13,7 +14,12 @@ class AuthGate extends StatelessWidget {
     if (!auth.isInitialized) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (auth.isLoggedIn) {
+    final user = auth.currentUser;
+    if (auth.isLoggedIn && user != null) {
+      // Paywall: past the grace period, streaming stops until renewal.
+      if (!user.isSubscriptionActive && !user.inGracePeriod) {
+        return const RenewScreen();
+      }
       return const MainScreen();
     }
     return LoginScreen(
