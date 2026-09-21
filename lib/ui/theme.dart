@@ -1,27 +1,27 @@
 import 'package:flutter/material.dart';
 
-// Rawang Heritage Inspired Color Palette
-const emeraldPrimary = Color(0xFF0F5A47);
-const emeraldLight = Color(0xFF2E8B57);
-const emeraldDark = Color(0xFF07382B);
+// Spotify Inspired Color Palette
+const emeraldPrimary = Color(0xFF1DB954);
+const emeraldLight = Color(0xFF1ED760);
+const emeraldDark = Color(0xFF0B3D24);
 
-const amberSecondary = Color(0xFFD4AF37);
-const amberLight = Color(0xFFF3E5AB);
-const goldAccent = Color(0xFFFFC107);
+const amberSecondary = Color(0xFF1DB954);
+const amberLight = Color(0xFFFFFFFF);
+const goldAccent = Color(0xFF1ED760);
 
-const terracottaTertiary = Color(0xFFC05A3A);
-const bambooGreen = Color(0xFF4E8D53);
+const terracottaTertiary = Color(0xFF1DB954);
+const bambooGreen = Color(0xFF535353);
 
-const darkBackground = Color(0xFF101714);
-const darkSurface = Color(0xFF19221E);
-const darkSurfaceVariant = Color(0xFF24302A);
+const darkBackground = Color(0xFF000000);
+const darkSurface = Color(0xFF121212);
+const darkSurfaceVariant = Color(0xFF181818);
 
 const lightBackground = Color(0xFFF6F8F6);
 const lightSurface = Color(0xFFFFFFFF);
 const lightSurfaceVariant = Color(0xFFE8EFEA);
 
-const textPrimaryDark = Color(0xFFECEFEA);
-const textSecondaryDark = Color(0xFFA2B3AA);
+const textPrimaryDark = Color(0xFFFFFFFF);
+const textSecondaryDark = Color(0xFFB3B3B3);
 
 const textPrimaryLight = Color(0xFF121C18);
 const textSecondaryLight = Color(0xFF53635C);
@@ -32,12 +32,12 @@ class AppTheme {
       brightness: Brightness.light,
       colorScheme: const ColorScheme.light(
         primary: emeraldPrimary,
-        onPrimary: Colors.white,
+        onPrimary: Colors.black,
         primaryContainer: lightSurfaceVariant,
         onPrimaryContainer: emeraldDark,
         secondary: amberSecondary,
         onSecondary: Colors.black,
-        secondaryContainer: amberLight,
+        secondaryContainer: Color(0xFFE8F5ED),
         onSecondaryContainer: emeraldDark,
         tertiary: terracottaTertiary,
         background: lightBackground,

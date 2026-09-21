@@ -112,17 +112,34 @@ class AlbumsScreen extends StatelessWidget {
   }
 
   Widget _buildFilterChip(BuildContext context, String label, String filter, IconData? icon) {
+    final theme = Theme.of(context);
+    final bool isSelected = selectedOwnerFilter == filter;
     return ChoiceChip(
       label: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 16),
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected ? Colors.black : theme.colorScheme.onSurfaceVariant,
+            ),
             const SizedBox(width: 4),
           ],
           Text(label),
         ],
       ),
-      selected: selectedOwnerFilter == filter,
+      selected: isSelected,
+      selectedColor: theme.colorScheme.primary,
+      backgroundColor: theme.colorScheme.surfaceVariant,
+      elevation: isSelected ? 3 : 0,
+      pressElevation: isSelected ? 3 : 0,
+      shadowColor: theme.colorScheme.primary.withValues(alpha: 0.5),
+      selectedShadowColor: theme.colorScheme.primary.withValues(alpha: 0.5),
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.black : theme.colorScheme.onSurface,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
       onSelected: (_) {
         onOwnerFilterChange(filter);
       },

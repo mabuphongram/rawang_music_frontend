@@ -365,8 +365,8 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                                   ),
                                   // Center Album Art Label - cached via CachedNetworkImageProvider
                                   Container(
-                                    width: constraints.maxWidth * 0.28,
-                                    height: constraints.maxWidth * 0.28,
+                                    width: constraints.maxWidth * 0.37,
+                                    height: constraints.maxWidth * 0.37,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       image: DecorationImage(
