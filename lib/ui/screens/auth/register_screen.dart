@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:rawang_melodies/ui/components/auth_background.dart';
 import 'package:rawang_melodies/ui/components/glass_auth.dart';
 import 'package:rawang_melodies/viewmodels/auth_view_model.dart';
-import 'login_screen.dart';
+import 'package:rawang_melodies/data/remote/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   final VoidCallback? onRegisterSuccess;
@@ -44,12 +44,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         email: _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Registered! Free access for 2 years'), backgroundColor: Colors.green));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Registered! Free access for 3 years'), backgroundColor: Colors.green));
       widget.onRegisterSuccess?.call();
       if (widget.onRegisterSuccess == null) Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: Colors.red.shade700));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AuthService.friendlyError(e)), backgroundColor: Colors.red.shade700));
     }
   }
 
@@ -133,7 +133,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                           child: vm.isLoading
                               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                              : const Text('Register - Free 2 years', style: TextStyle(fontWeight: FontWeight.w700)),
+                              : const Text('Register - Free 3 years', style: TextStyle(fontWeight: FontWeight.w700)),
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -142,7 +142,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         children: [
                           const Text('Already have account? ', style: TextStyle(color: Colors.white70)),
                           GestureDetector(
-                            onTap: () => Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => LoginScreen(onLoginSuccess: widget.onRegisterSuccess, onGuest: widget.onGuest))),
+                            // Pop back to the Login form below (never replace:
+                            // replacing would strand the AuthGate route and its
+                            // pending rebuild on a dead element).
+                            onTap: () => Navigator.of(context).pop(),
                             child: Text('Login', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700)),
                           ),
                         ],

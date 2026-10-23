@@ -23,9 +23,10 @@ class AuthGate extends StatelessWidget {
       return const MainScreen();
     }
     return LoginScreen(
-      onLoginSuccess: () {
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const MainScreen()));
-      },
+      // Empty: the gate rebuilds to MainScreen on its own once currentUser
+      // is set. Navigating here too would push a second route while the
+      // gate's own rebuild is pending (red-screen race).
+      onLoginSuccess: () {},
       onGuest: () {
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const MainScreen()));
       },

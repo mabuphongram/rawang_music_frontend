@@ -31,8 +31,8 @@ class ApiService {
     final results = <OwnerEntity>[];
     try {
       final responses = await Future.wait([
-        http.get(Uri.parse('$baseUrl/singers')).timeout(const Duration(seconds: 5)),
-        http.get(Uri.parse('$baseUrl/organizations')).timeout(const Duration(seconds: 5)),
+        http.get(Uri.parse('$baseUrl/singers'), headers: AuthService.agentHeaders()).timeout(const Duration(seconds: 5)),
+        http.get(Uri.parse('$baseUrl/organizations'), headers: AuthService.agentHeaders()).timeout(const Duration(seconds: 5)),
       ]);
 
       if (responses[0].statusCode == 200) {
@@ -54,7 +54,7 @@ class ApiService {
   // ─────────────────────────────────────────────
   static Future<List<AlbumEntity>> fetchAlbums() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/albums')).timeout(const Duration(seconds: 5));
+      final response = await http.get(Uri.parse('$baseUrl/albums'), headers: AuthService.agentHeaders()).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((j) => AlbumEntity.fromMap(j)).toList();
@@ -70,7 +70,7 @@ class ApiService {
   // ─────────────────────────────────────────────
   static Future<List<TrackEntity>> fetchTracks() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/tracks')).timeout(const Duration(seconds: 5));
+      final response = await http.get(Uri.parse('$baseUrl/tracks'), headers: AuthService.agentHeaders()).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((j) => TrackEntity.fromMap(j)).toList();
@@ -83,7 +83,7 @@ class ApiService {
 
   static Future<List<TrackEntity>> fetchPopularTracks() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/tracks/popular')).timeout(const Duration(seconds: 5));
+      final response = await http.get(Uri.parse('$baseUrl/tracks/popular'), headers: AuthService.agentHeaders()).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((j) => TrackEntity.fromMap(j)).toList();
@@ -99,7 +99,7 @@ class ApiService {
   // ─────────────────────────────────────────────
   static Future<List<PlaylistEntity>> fetchPlaylists() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/playlists')).timeout(const Duration(seconds: 5));
+      final response = await http.get(Uri.parse('$baseUrl/playlists'), headers: AuthService.agentHeaders()).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((j) => PlaylistEntity.fromMap(j)).toList();
@@ -113,7 +113,7 @@ class ApiService {
   /// Returns raw JSON maps so the sync layer can read trackIds.
   static Future<List<Map<String, dynamic>>> fetchPlaylistsRaw() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/playlists')).timeout(const Duration(seconds: 5));
+      final response = await http.get(Uri.parse('$baseUrl/playlists'), headers: AuthService.agentHeaders()).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.cast<Map<String, dynamic>>();
@@ -129,13 +129,29 @@ class ApiService {
   // ─────────────────────────────────────────────
   static Future<List<HeroSlideEntity>> fetchHeroSlides() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/hero-slides?isActive=true')).timeout(const Duration(seconds: 5));
+      final response = await http.get(Uri.parse('$baseUrl/hero-slides?isActive=true'), headers: AuthService.agentHeaders()).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((j) => HeroSlideEntity.fromMap(j)).toList();
       }
     } catch (e) {
       print('Error fetching hero slides: $e');
+    }
+    return [];
+  }
+
+  // ─────────────────────────────────────────────
+  // Videos (YouTube embeds for the home MTV row)
+  // ─────────────────────────────────────────────
+  static Future<List<VideoEntity>> fetchVideos() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/videos?isPublished=true'), headers: AuthService.agentHeaders()).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((j) => VideoEntity.fromMap(j)).toList();
+      }
+    } catch (e) {
+      print('Error fetching videos: $e');
     }
     return [];
   }
@@ -149,7 +165,7 @@ class ApiService {
       if (beforeTimestamp != null) {
         url += '&before=$beforeTimestamp';
       }
-      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+      final response = await http.get(Uri.parse(url), headers: AuthService.agentHeaders()).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((j) => ChatMessageEntity.fromMap(j)).toList();
@@ -164,7 +180,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/chat/messages'),
-        headers: {'Content-Type': 'application/json'},
+        headers: AuthService.publicHeaders(),
         body: json.encode(msg.toMap()),
       );
       return response.statusCode == 201;
@@ -181,7 +197,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/playlists'),
-        headers: {'Content-Type': 'application/json'},
+        headers: AuthService.publicHeaders(),
         body: json.encode(playlist.toMap()),
       );
       return response.statusCode == 201;
@@ -195,7 +211,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/playlists/$playlistId/tracks'),
-        headers: {'Content-Type': 'application/json'},
+        headers: AuthService.publicHeaders(),
         body: json.encode({'trackId': trackId}),
       );
       return response.statusCode == 201 || response.statusCode == 200;
@@ -209,6 +225,7 @@ class ApiService {
     try {
       final response = await http.delete(
         Uri.parse('$baseUrl/playlists/$playlistId/tracks/$trackId'),
+        headers: AuthService.agentHeaders(),
       );
       return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
@@ -229,7 +246,9 @@ class ApiService {
       await http
           .post(
             Uri.parse('$baseUrl/tracks/$trackId/play'),
-            headers: token == null ? null : {'Authorization': 'Bearer $token'},
+            headers: token == null
+                ? AuthService.agentHeaders()
+                : {'Authorization': 'Bearer $token', 'User-Agent': AuthService.appUserAgent},
           )
           .timeout(const Duration(seconds: 5));
     } catch (e) {
@@ -245,7 +264,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/albums'),
-        headers: {'Content-Type': 'application/json'},
+        headers: AuthService.publicHeaders(),
         body: json.encode(album.toMap()),
       );
       return response.statusCode == 201;
@@ -259,7 +278,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/tracks'),
-        headers: {'Content-Type': 'application/json'},
+        headers: AuthService.publicHeaders(),
         body: json.encode(track.toMap()),
       );
       return response.statusCode == 201;
@@ -285,6 +304,7 @@ class ApiService {
     required String avatarPath,
   }) async {
     final req = http.MultipartRequest('POST', Uri.parse('$baseUrl/owner-requests'));
+    req.headers['User-Agent'] = AuthService.appUserAgent;
     req.fields['name'] = name;
     req.fields['ownerModel'] = ownerModel;
     req.fields['phone'] = phone;
@@ -325,6 +345,7 @@ class ApiService {
     if (token == null) throw Exception('Please log in first');
 
     final req = http.MultipartRequest('POST', Uri.parse('$baseUrl/contributions'));
+    req.headers['User-Agent'] = AuthService.appUserAgent;
     req.headers['Authorization'] = 'Bearer $token';
     req.fields['title'] = title;
     req.fields['artistName'] = artistName;
@@ -337,6 +358,7 @@ class ApiService {
 
     final streamed = await req.send().timeout(const Duration(seconds: 120));
     final body = await http.Response.fromStream(streamed);
+    await AuthService.checkRevoked(body);
     if (streamed.statusCode != 201) {
       String message = 'Upload failed (${streamed.statusCode})';
       try {

@@ -13,6 +13,7 @@ import 'package:rawang_melodies/ui/screens/contribute_screen.dart';
 import 'package:rawang_melodies/ui/screens/home_screen.dart';
 import 'package:rawang_melodies/ui/screens/offline_screen.dart';
 import 'package:rawang_melodies/ui/screens/owners_screen.dart';
+import 'package:rawang_melodies/ui/screens/video_player_screen.dart';
 import 'package:rawang_melodies/ui/screens/settings/settings_screen.dart';
 import 'package:rawang_melodies/ui/screens/auth/auth_gate.dart';
 import 'package:rawang_melodies/ui/screens/auth/login_screen.dart';
@@ -65,7 +66,7 @@ class MainScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Login required'),
         content: const Text(
-          'Streaming needs a free account (2 years free). Log in or register to keep listening.',
+          'Streaming needs a free account (3 years free). Log in or register to keep listening.',
         ),
         actions: [
           TextButton(
@@ -130,7 +131,7 @@ class MainScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  'Subscription expired — renew within ${UserEntity.graceDays - user!.daysOverdue} day(s) to keep listening.',
+                  'Your access has expired — contact support within ${UserEntity.graceDays - user!.daysOverdue} day(s) to keep listening.',
                   style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                   textAlign: TextAlign.center,
                 ),
@@ -183,7 +184,6 @@ class MainScreen extends StatelessWidget {
                             onToggleDownload: () => mvm.toggleDownload(state.currentTrack!),
                             onToggleFavorite: () => mvm.toggleFavorite(state.currentTrack!),
                             onToggleKaraokeMode: mvm.toggleKaraokeMode,
-                            onShare: () => mvm.setTrackToShare(state.currentTrack!),
                           );
                         },
                       );
@@ -240,8 +240,17 @@ class MainScreen extends StatelessWidget {
         popularTracks: viewModel.popularTracks,
         owners: viewModel.owners,
         heroSlides: viewModel.heroSlides,
+        videos: viewModel.videos,
         currentPlayingTrackId: viewModel.playerEngine.playerState.currentTrack?.id,
         onSelectAlbum: (album) => viewModel.selectHomeAlbum(album),
+        onPlayVideo: (video) {
+          // Pause any audio so it never plays over the video (YouTube ToS:
+          // no background/overlapping playback).
+          viewModel.playerEngine.pausePlayback();
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => VideoPlayerScreen(video: video)),
+          );
+        },
         onPlayTrack: (track, ctx) => viewModel.playTrack(track, playlistContext: ctx),
         onToggleDownload: viewModel.toggleDownload,
         onToggleFavorite: viewModel.toggleFavorite,

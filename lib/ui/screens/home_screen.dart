@@ -13,8 +13,10 @@ class HomeScreen extends StatefulWidget {
   final List<TrackEntity> popularTracks;
   final List<OwnerEntity> owners;
   final List<HeroSlideEntity> heroSlides;
+  final List<VideoEntity> videos;
   final String? currentPlayingTrackId;
   final void Function(AlbumEntity) onSelectAlbum;
+  final void Function(VideoEntity) onPlayVideo;
   final void Function(TrackEntity, List<TrackEntity>) onPlayTrack;
   final void Function(TrackEntity) onToggleDownload;
   final void Function(TrackEntity) onToggleFavorite;
@@ -32,8 +34,10 @@ class HomeScreen extends StatefulWidget {
     required this.popularTracks,
     required this.owners,
     required this.heroSlides,
+    required this.videos,
     this.currentPlayingTrackId,
     required this.onSelectAlbum,
+    required this.onPlayVideo,
     required this.onPlayTrack,
     required this.onToggleDownload,
     required this.onToggleFavorite,
@@ -130,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Hero Carousel (16:9, admin-driven with bundled fallback)
+          // Hero Carousel (16:8 compact banner, admin-driven with bundled fallback)
           Container(
             margin: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -146,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: AspectRatio(
-                aspectRatio: 16 / 9,
+                aspectRatio: 16 / 8,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -321,7 +325,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ],
             ),
           ),
-          const SizedBox(height: 7      ),
+          const SizedBox(height: 7),
 
           SizedBox(
             height: 120,
@@ -340,6 +344,131 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
           const SizedBox(height: 10),
 
+
+          // MTV Videos row (YouTube embeds, above Featured Albums)
+          if (widget.videos.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                "Video & MTV",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 196,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                scrollDirection: Axis.horizontal,
+                itemCount: widget.videos.length,
+                separatorBuilder: (_, index) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final video = widget.videos[index];
+                  return GestureDetector(
+                    onTap: () => widget.onPlayVideo(video),
+                    child: SizedBox(
+                      width: 240,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: video.thumbnailUrl.isEmpty
+                                    ? Container(
+                                        width: 240,
+                                        height: 135,
+                                        color: Colors.grey.shade800,
+                                        child: const Center(
+                                          child: Icon(Icons.play_circle_outline,
+                                              size: 40, color: Colors.white54),
+                                        ),
+                                      )
+                                    : CachedNetworkImage(
+                                        imageUrl: video.thumbnailUrl,
+                                        width: 240,
+                                        height: 135,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) => Container(
+                                          width: 240,
+                                          height: 135,
+                                          color: Colors.grey.shade800,
+                                          child: const Center(
+                                              child: CircularProgressIndicator()),
+                                        ),
+                                        errorWidget: (context, url, error) =>
+                                            Container(
+                                          width: 240,
+                                          height: 135,
+                                          color: Colors.grey.shade800,
+                                          child: const Center(
+                                            child: Icon(Icons.play_circle_outline,
+                                                size: 40, color: Colors.white54),
+                                          ),
+                                        ),
+                                      ),
+                              ),
+                              Positioned.fill(
+                                child: Center(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.45),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.play_arrow,
+                                        color: Colors.white, size: 28),
+                                  ),
+                                ),
+                              ),
+                              if (video.formattedDuration.isNotEmpty)
+                                Positioned(
+                                  right: 8,
+                                  bottom: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.75),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      video.formattedDuration,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            video.title,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
 
           // Featured Albums Carousel
           Padding(
@@ -464,8 +593,32 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   separatorBuilder: (_, index) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final track = widget.popularTracks[index];
+                    String? coverImage;
+                    // Singer tracks -> singer's photo (owner avatar).
+                    if (track.ownerType == OwnerType.singer.name) {
+                      final artistKey = track.artistName.trim().toLowerCase();
+                      for (final owner in widget.owners) {
+                        if (owner.ownerType == OwnerType.singer.name &&
+                            owner.avatarUrl.isNotEmpty &&
+                            owner.name.trim().toLowerCase() == artistKey) {
+                          coverImage = owner.avatarUrl;
+                          break;
+                        }
+                      }
+                    }
+                    // Organizations / others (or singer fallback) -> album image.
+                    if (coverImage == null) {
+                      for (final album in widget.albums) {
+                        if (album.id == track.albumId || track.albumIds.contains(album.id)) {
+                          coverImage = album.coverImage;
+                          break;
+                        }
+                      }
+                    }
                     return TrackListItem(
                       track: track,
+                      albumCoverImage: coverImage,
+                      showPlayOverlay: false,
                       isPlayingCurrentTrack: track.id == widget.currentPlayingTrackId,
                       onTrackClick: () => widget.onPlayTrack(track, widget.popularTracks),
                       onToggleDownload: () => widget.onToggleDownload(track),

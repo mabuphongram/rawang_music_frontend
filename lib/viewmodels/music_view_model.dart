@@ -23,7 +23,6 @@ class MusicViewModel extends ChangeNotifier {
   PlaylistEntity? selectedPlaylist;
   bool isCreatePlaylistDialogOpen = false;
   TrackEntity? trackToAddToPlaylist;
-  TrackEntity? trackToShare;
 
   // Sync State
   bool isSyncing = false;
@@ -38,6 +37,7 @@ class MusicViewModel extends ChangeNotifier {
   List<PlaylistEntity> playlists = [];
   List<TrackEntity> popularTracks = [];
   List<HeroSlideEntity> heroSlides = [];
+  List<VideoEntity> videos = [];
 
   // ── Online presence ────────────────────────────────────────────────
   int onlineCount = 0;
@@ -127,6 +127,7 @@ class MusicViewModel extends ChangeNotifier {
     tracks = await db.getAllTracks();
     owners = await db.getAllOwners();
     heroSlides = await db.getAllHeroSlides();
+    videos = await db.getAllVideos();
     downloadedTracks = await db.getDownloadedTracks();
     favoriteTracks = await db.getFavoriteTracks();
     playlists = await db.getAllPlaylists();
@@ -149,6 +150,10 @@ class MusicViewModel extends ChangeNotifier {
       owners = await db.getAllOwners();  // read fresh owners from cache
       heroSlides = (await db.getAllHeroSlides())
           .where((s) => s.isActive)
+          .toList()
+        ..sort((a, b) => a.order.compareTo(b.order));
+      videos = (await db.getAllVideos())
+          .where((v) => v.isPublished)
           .toList()
         ..sort((a, b) => a.order.compareTo(b.order));
       downloadedTracks = await db.getDownloadedTracks();
@@ -277,11 +282,6 @@ class MusicViewModel extends ChangeNotifier {
 
   void setTrackToAddToPlaylist(TrackEntity? track) {
     trackToAddToPlaylist = track;
-    notifyListeners();
-  }
-
-  void setTrackToShare(TrackEntity? track) {
-    trackToShare = track;
     notifyListeners();
   }
 

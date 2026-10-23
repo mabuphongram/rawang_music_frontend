@@ -6,7 +6,7 @@ import 'package:rawang_melodies/data/remote/api_service.dart';
 
 class DatabaseHelper {
   static const _databaseName = "rawang_database.db";
-  static const _databaseVersion = 8;
+  static const _databaseVersion = 10;
 
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
@@ -140,6 +140,30 @@ class DatabaseHelper {
         WHERE albumId IS NOT NULL AND albumId != ''
       ''');
     }
+
+    if (oldVersion < 9) {
+      // v8 -> v9: add composerName column for full player display
+      final cols = await db.rawQuery("PRAGMA table_info(tracks)");
+      final existing = cols.map((c) => c['name'] as String).toSet();
+      if (!existing.contains('composerName')) {
+        await db.execute('ALTER TABLE tracks ADD COLUMN composerName TEXT DEFAULT ""');
+      }
+    }
+
+    if (oldVersion < 10) {
+      // v9 -> v10: add videos table for home YouTube MTV row
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS videos (
+          id TEXT PRIMARY KEY,
+          title TEXT,
+          description TEXT DEFAULT "",
+          youtubeVideoId TEXT,
+          durationSeconds INTEGER DEFAULT 0,
+          videoOrder INTEGER DEFAULT 0,
+          isPublished INTEGER DEFAULT 1
+        )
+      ''');
+    }
   }
 
   Future _onCreate(Database db, int version) async {
@@ -163,6 +187,7 @@ class DatabaseHelper {
         title TEXT,
         rawangTitle TEXT,
         artistName TEXT,
+        composerName TEXT DEFAULT "",
         albumName TEXT,
         ownerType TEXT,
         durationSeconds INTEGER,
@@ -265,6 +290,18 @@ class DatabaseHelper {
       )
     ''');
 
+    await db.execute('''
+      CREATE TABLE videos (
+        id TEXT PRIMARY KEY,
+        title TEXT,
+        description TEXT DEFAULT "",
+        youtubeVideoId TEXT,
+        durationSeconds INTEGER DEFAULT 0,
+        videoOrder INTEGER DEFAULT 0,
+        isPublished INTEGER DEFAULT 1
+      )
+    ''');
+
     // Initial empty state, will sync from API
     // batch.commit(noResult: true);
   }
@@ -285,6 +322,7 @@ class DatabaseHelper {
       ApiService.fetchChatMessages(),
       ApiService.fetchOwners(),
       ApiService.fetchHeroSlides(),
+      ApiService.fetchVideos(),
     ]);
 
     final apiAlbums = results[0] as List<AlbumEntity>;
@@ -293,6 +331,7 @@ class DatabaseHelper {
     final apiMessages = results[3] as List<ChatMessageEntity>;
     final apiOwners = results[4] as List<OwnerEntity>;
     final apiHeroSlides = results[5] as List<HeroSlideEntity>;
+    final apiVideos = results[6] as List<VideoEntity>;
 
     final apiPlaylists = apiPlaylistsRaw.map((j) => PlaylistEntity.fromMap(j)).toList();
 
@@ -336,6 +375,18 @@ class DatabaseHelper {
           'durationSeconds': m['durationSeconds'],
           'slideOrder': m['order'],
           'isActive': m['isActive'],
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      for (var video in apiVideos) {
+        final m = video.toMap();
+        batch.insert('videos', {
+          'id': m['id'],
+          'title': m['title'],
+          'description': m['description'],
+          'youtubeVideoId': m['youtubeVideoId'],
+          'durationSeconds': m['durationSeconds'],
+          'videoOrder': m['order'],
+          'isPublished': m['isPublished'],
         }, conflictAlgorithm: ConflictAlgorithm.replace);
       }
 
@@ -432,6 +483,17 @@ class DatabaseHelper {
       m['order'] = m['slideOrder'] ?? 0;
       m.remove('slideOrder');
       return HeroSlideEntity.fromMap(m);
+    }).toList();
+  }
+
+  Future<List<VideoEntity>> getAllVideos() async {
+    final db = await database;
+    final maps = await db.query('videos', orderBy: 'videoOrder ASC');
+    return maps.map((e) {
+      final m = Map<String, dynamic>.from(e);
+      m['order'] = m['videoOrder'] ?? 0;
+      m.remove('videoOrder');
+      return VideoEntity.fromMap(m);
     }).toList();
   }
 

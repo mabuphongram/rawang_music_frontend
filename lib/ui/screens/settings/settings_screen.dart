@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
+import 'package:rawang_melodies/ui/components/support_contact.dart';
 import 'package:rawang_melodies/ui/screens/auth/login_screen.dart';
 import 'package:rawang_melodies/viewmodels/auth_view_model.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -25,19 +25,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.dispose();
   }
 
-  String _planLabel(SubscriptionPlan p) {
-    switch (p) {
-      case SubscriptionPlan.oneMonth:
-        return '1 Month';
-      case SubscriptionPlan.threeMonths:
-        return '3 Months';
-      case SubscriptionPlan.oneYear:
-        return '1 Year';
-      default:
-        return 'Free 2 years';
-    }
-  }
-
   String _formatExpiry(int ms) {
     try {
       return DateFormat.yMMMd().format(DateTime.fromMillisecondsSinceEpoch(ms));
@@ -46,9 +33,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _contactAdmin() async {
-    final uri = Uri.parse('tel:+95900000000');
-    if (await canLaunchUrl(uri)) await launchUrl(uri);
+  Future<void> _contactSupport() async {
+    await contactSupport();
   }
 
   Future<void> _changePassword() async {
@@ -94,7 +80,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         Text('Settings', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
         const SizedBox(height: 4),
-        Text('Account, subscription & heritage', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+        Text('Account & heritage', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
         const SizedBox(height: 16),
         // Profile card
         Container(
@@ -150,9 +136,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Row(children: [
                       Icon(Icons.card_membership, size: 16, color: theme.colorScheme.primary),
                       const SizedBox(width: 6),
-                      Text('Plan: ${_planLabel(user.subscriptionPlan)}', style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
-                      const Spacer(),
-                      Text(_formatExpiry(user.subscriptionExpiresAt), style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+                      Text('Access valid until ${_formatExpiry(user.subscriptionExpiresAt)}', style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
                     ]),
                     const SizedBox(height: 6),
                     Text('Role: ${user.role.name}', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
@@ -164,18 +148,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
         ),
         const SizedBox(height: 16),
-        // Subscription info
+        // Access info
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(color: theme.colorScheme.surfaceVariant, borderRadius: BorderRadius.circular(14)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(children: [Icon(Icons.info_outline, size: 18, color: theme.colorScheme.primary), const SizedBox(width: 6), Text('Subscription', style: TextStyle(fontWeight: FontWeight.w700, color: theme.colorScheme.onSurface))]),
+              Row(children: [Icon(Icons.info_outline, size: 18, color: theme.colorScheme.primary), const SizedBox(width: 6), Text('Access', style: TextStyle(fontWeight: FontWeight.w700, color: theme.colorScheme.onSurface))]),
               const SizedBox(height: 6),
-              const Text('Free for 2 years for ~1000 users. After that 1m/3m/1y paid via bank transfer - admin activates in portal.', style: TextStyle(fontSize: 12, height: 1.4)),
+              const Text('Free access for the community. If your access expires, contact support.', style: TextStyle(fontSize: 12, height: 1.4)),
               const SizedBox(height: 10),
-              SizedBox(width: double.infinity, child: OutlinedButton.icon(icon: const Icon(Icons.support_agent, size: 18), label: const Text('Contact admin to renew'), onPressed: _contactAdmin, style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))))),
+              SizedBox(width: double.infinity, child: OutlinedButton.icon(icon: const Icon(Icons.support_agent, size: 18), label: const Text('Contact support'), onPressed: _contactSupport, style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))))),
+              const SizedBox(height: 6),
+              Center(child: Text(supportEmail, style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant))),
             ],
           ),
         ),

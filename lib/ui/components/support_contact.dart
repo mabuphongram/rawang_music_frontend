@@ -1,10 +1,14 @@
 import 'package:url_launcher/url_launcher.dart';
 
-// TODO(admin): replace with the real admin phone / payment contact.
-// Shown on the renew wall, settings, and forgot-password screens.
-const adminSupportPhone = '+95900000000';
+// Community support contact — email only.
+// No payment information of any kind lives in the app.
+const supportEmail = 'rawangmelodies@gmail.com';
 
-Future<void> contactAdmin() async {
-  final uri = Uri.parse('tel:$adminSupportPhone');
+Future<void> contactSupport() async {
+  final uri = Uri(
+    scheme: 'mailto',
+    path: supportEmail,
+    query: 'subject=Rawang Melodies support',
+  );
   if (await canLaunchUrl(uri)) await launchUrl(uri);
 }

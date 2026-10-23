@@ -174,6 +174,7 @@ class TrackEntity {
   final String title;
   final String rawangTitle;
   final String artistName;
+  final String composerName;
   final String albumName;
   final String ownerType;
   final int durationSeconds;
@@ -193,6 +194,7 @@ class TrackEntity {
     required this.title,
     required this.rawangTitle,
     required this.artistName,
+    this.composerName = '',
     required this.albumName,
     required this.ownerType,
     required this.durationSeconds,
@@ -213,6 +215,7 @@ class TrackEntity {
     String? title,
     String? rawangTitle,
     String? artistName,
+    String? composerName,
     String? albumName,
     String? ownerType,
     int? durationSeconds,
@@ -232,6 +235,7 @@ class TrackEntity {
       title: title ?? this.title,
       rawangTitle: rawangTitle ?? this.rawangTitle,
       artistName: artistName ?? this.artistName,
+      composerName: composerName ?? this.composerName,
       albumName: albumName ?? this.albumName,
       ownerType: ownerType ?? this.ownerType,
       durationSeconds: durationSeconds ?? this.durationSeconds,
@@ -282,6 +286,7 @@ class TrackEntity {
       title: (map['title'] ?? '').toString(),
       rawangTitle: (map['rawangTitle'] ?? '').toString(),
       artistName: (map['artistName'] ?? '').toString(),
+      composerName: (map['composerName'] ?? '').toString(),
       albumName: (map['albumName'] ?? '').toString(),
       ownerType: (map['ownerType'] ?? '').toString(),
       durationSeconds: asInt(map['durationSeconds']),
@@ -304,6 +309,7 @@ class TrackEntity {
       'title': title,
       'rawangTitle': rawangTitle,
       'artistName': artistName,
+      'composerName': composerName,
       'albumName': albumName,
       'ownerType': ownerType,
       'durationSeconds': durationSeconds,
@@ -437,8 +443,7 @@ class HeroSlideEntity {
   }
 }
 
-class ChatMessageEntity {  final String id;
-  final String senderName;
+class ChatMessageEntity {  final String id;  final String senderName;
   final String message;
   final int timestamp;
   final bool isUser;
@@ -666,5 +671,73 @@ class UserEntity {
       createdTimestamp: createdTimestamp,
       updatedTimestamp: DateTime.now().millisecondsSinceEpoch,
     );
+  }
+}
+
+class VideoEntity {
+  final String id;
+  final String title;
+  final String description;
+  final String youtubeVideoId;
+  final int durationSeconds;
+  final int order;
+  final bool isPublished;
+
+  VideoEntity({
+    required this.id,
+    required this.title,
+    this.description = '',
+    required this.youtubeVideoId,
+    this.durationSeconds = 0,
+    this.order = 0,
+    this.isPublished = true,
+  });
+
+  /// Free CDN thumbnail — no storage or bandwidth on our servers.
+  String get thumbnailUrl => youtubeVideoId.isEmpty
+      ? ''
+      : 'https://i.ytimg.com/vi/$youtubeVideoId/hqdefault.jpg';
+
+  String get watchUrl => 'https://www.youtube.com/watch?v=$youtubeVideoId';
+
+  String get formattedDuration {
+    if (durationSeconds <= 0) return '';
+    final m = durationSeconds ~/ 60;
+    final s = (durationSeconds % 60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  factory VideoEntity.fromMap(Map<String, dynamic> map) {
+    int asInt(dynamic v, int fallback) {
+      if (v == null) return fallback;
+      if (v is int) return v;
+      if (v is double) return v.toInt();
+      return int.tryParse(v.toString()) ?? fallback;
+    }
+
+    bool asBool(dynamic v) =>
+        v == 1 || v == true || v == '1' || v == 'true' || v == 'True';
+
+    return VideoEntity(
+      id: (map['id'] ?? map['_id'] ?? '').toString(),
+      title: (map['title'] ?? '').toString(),
+      description: (map['description'] ?? '').toString(),
+      youtubeVideoId: (map['youtubeVideoId'] ?? '').toString(),
+      durationSeconds: asInt(map['durationSeconds'], 0),
+      order: asInt(map['order'], 0),
+      isPublished: map.containsKey('isPublished') ? asBool(map['isPublished']) : true,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'youtubeVideoId': youtubeVideoId,
+      'durationSeconds': durationSeconds,
+      'order': order,
+      'isPublished': isPublished ? 1 : 0,
+    };
   }
 }

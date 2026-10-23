@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:rawang_melodies/player/audio_player_engine.dart';
 import 'package:rawang_melodies/data/remote/api_service.dart';
+import 'package:rawang_melodies/services/lyrics_pdf.dart';
 
 class _LyricLine {
   final Duration time;
@@ -23,7 +24,6 @@ class FullScreenPlayerModal extends StatefulWidget {
   final VoidCallback onToggleDownload;
   final VoidCallback onToggleFavorite;
   final VoidCallback onToggleKaraokeMode;
-  final VoidCallback onShare;
 
   const FullScreenPlayerModal({
     super.key,
@@ -40,7 +40,6 @@ class FullScreenPlayerModal extends StatefulWidget {
     required this.onToggleDownload,
     required this.onToggleFavorite,
     required this.onToggleKaraokeMode,
-    required this.onShare,
   });
 
   @override
@@ -49,10 +48,13 @@ class FullScreenPlayerModal extends StatefulWidget {
 
 class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with SingleTickerProviderStateMixin {
   late AnimationController _rotationController;
+  bool _exportingPdf = false;
 
   @override
   void initState() {
     super.initState();
+    // Warm the PDF fonts in the background so lyric export feels instant.
+    LyricsPdf.warmup();
     _rotationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 15),
@@ -81,6 +83,34 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
     final mins = seconds ~/ 60;
     final secs = seconds % 60;
     return '$mins:${secs.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _exportLyricsPdf() async {
+    if (_exportingPdf) return;
+    final track = widget.playerState.currentTrack;
+    if (track == null || track.lyrics.trim().isEmpty) return;
+    setState(() => _exportingPdf = true);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    try {
+      await LyricsPdf.exportTrack(track);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        setState(() => _exportingPdf = false);
+      }
+    }
   }
 
   List<_LyricLine> _parseLyrics(String lyrics) {
@@ -284,10 +314,20 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                   ),
                 ],
               ),
-              IconButton(
-                icon: const Icon(Icons.share),
-                onPressed: widget.onShare,
-              ),
+              if (track.lyrics.trim().isNotEmpty)
+                IconButton(
+                  icon: _exportingPdf
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.picture_as_pdf_outlined),
+                  tooltip: 'Export lyrics PDF',
+                  onPressed: _exportingPdf ? null : _exportLyricsPdf,
+                )
+              else
+                const SizedBox(width: 48),
             ],
           ),
           const SizedBox(height: 8),
@@ -504,13 +544,13 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                     }
                   ),
                     
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   
                   // Title and Artist
                   Text(
                     track.title,
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.onSurface,
                     ),
@@ -527,15 +567,28 @@ class _FullScreenPlayerModalState extends State<FullScreenPlayerModal> with Sing
                       textAlign: TextAlign.center,
                     ),
                   Text(
-                    "Yo - ${track.artistName}",
+                    track.artistName,
                     style: TextStyle(
                       fontSize: 14,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                     textAlign: TextAlign.center,
                   ),
+                  if (track.composerName.trim().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        'Composer: ${track.composerName}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                          color: theme.colorScheme.onSurfaceVariant.withOpacity(0.75),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 25),
                   
                   // Lyrics Queue
                   _buildLyricsQueue(theme, parsedLyrics, widget.playerState.currentPositionMs),

@@ -6,8 +6,8 @@ import 'package:rawang_melodies/ui/components/glass_auth.dart';
 import 'package:rawang_melodies/ui/components/support_contact.dart';
 import 'package:rawang_melodies/viewmodels/auth_view_model.dart';
 
-/// Paywall shown when the subscription expired beyond the grace period.
-/// Renewal is manual: pay admin offline, admin activates in the portal.
+/// Shown when access expired beyond the grace period.
+/// Neutral by design: status + support contact only, no payment language.
 class RenewScreen extends StatelessWidget {
   const RenewScreen({super.key});
 
@@ -29,7 +29,7 @@ class RenewScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 56),
               const Text(
-                'Subscription expired',
+                'Access expired',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 28,
@@ -48,7 +48,7 @@ class RenewScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Text(
-                      'How to renew',
+                      'What to do',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -56,17 +56,17 @@ class RenewScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _step('1', 'Choose a plan: 1 Month, 3 Months, or 1 Year.'),
-                    _step('2', 'Transfer payment to the admin (bank / e-wallet).'),
-                    _step('3', 'Send your receipt + phone number to the admin.'),
-                    _step('4', 'Admin activates you — usually within a day.'),
+                    const Text(
+                      'Contact support and mention your registered phone number. Support will help restore your access.',
+                      style: TextStyle(color: Colors.white, fontSize: 13, height: 1.5),
+                    ),
                     const SizedBox(height: 16),
                     SizedBox(
                       height: 48,
                       child: ElevatedButton.icon(
-                        onPressed: contactAdmin,
+                        onPressed: contactSupport,
                         icon: const Icon(Icons.support_agent),
-                        label: Text('Contact admin ($adminSupportPhone)'),
+                        label: const Text('Contact support'),
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -75,6 +75,14 @@ class RenewScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
+                    Text(
+                      supportEmail,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 12,
+                      ),
+                    ),
                     TextButton(
                       onPressed: () => context.read<AuthViewModel>().logout(),
                       child: const Text(
@@ -98,41 +106,6 @@ class RenewScreen extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _step(String n, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 22,
-            height: 22,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              n,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.5),
-            ),
-          ),
-        ],
       ),
     );
   }

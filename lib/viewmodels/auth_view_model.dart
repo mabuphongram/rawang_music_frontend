@@ -10,8 +10,16 @@ class AuthViewModel extends ChangeNotifier {
   bool isLoading = false;
   bool isInitialized = false;
   String? error;
+  /// Shown once on the login screen after a kick from another device.
+  String? sessionNotice;
 
   AuthViewModel() {
+    AuthService.onSessionRevoked = () async {
+      currentUser = null;
+      sessionNotice = AuthService.revokedMessage;
+      await db.clearUsers();
+      notifyListeners();
+    };
     _init();
   }
 
@@ -49,11 +57,17 @@ class AuthViewModel extends ChangeNotifier {
   bool get isLoggedIn => currentUser != null;
   bool get isSubscriptionActive => currentUser?.isSubscriptionActive ?? false;
 
+  void clearSessionNotice() {
+    sessionNotice = null;
+    notifyListeners();
+  }
+
   Future<void> login(String phone, String password) async {
     isLoading = true; error = null; notifyListeners();
     try {
       final res = await AuthService.login(phone: phone, password: password);
       currentUser = UserEntity.fromMap(res['user']);
+      sessionNotice = null;
       await db.upsertUser(currentUser!);
     } catch (e) {
       error = e.toString().replaceFirst('Exception: ', '');
@@ -68,6 +82,7 @@ class AuthViewModel extends ChangeNotifier {
     try {
       final res = await AuthService.register(phone: phone, password: password, name: name, email: email);
       currentUser = UserEntity.fromMap(res['user']);
+      sessionNotice = null;
       await db.upsertUser(currentUser!);
     } catch (e) {
       error = e.toString().replaceFirst('Exception: ', '');

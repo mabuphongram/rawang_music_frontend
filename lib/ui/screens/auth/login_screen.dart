@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:rawang_melodies/ui/components/auth_background.dart';
 import 'package:rawang_melodies/ui/components/glass_auth.dart';
 import 'package:rawang_melodies/viewmodels/auth_view_model.dart';
+import 'package:rawang_melodies/data/remote/auth_service.dart';
 import 'register_screen.dart';
 import 'forgot_screen.dart';
 
@@ -38,13 +39,22 @@ class _LoginScreenState extends State<LoginScreen> {
       if (widget.onLoginSuccess == null) Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: Colors.red.shade700));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AuthService.friendlyError(e)), backgroundColor: Colors.red.shade700));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<AuthViewModel>();
+    if (vm.sessionNotice != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(vm.sessionNotice!), backgroundColor: Colors.orange.shade700),
+        );
+        vm.clearSessionNotice();
+      });
+    }
     return Scaffold(
       body: AuthBackground(
         child: SingleChildScrollView(
@@ -113,7 +123,20 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           const Text("Don't have account? ", style: TextStyle(color: Colors.white70)),
                           GestureDetector(
-                            onTap: () => Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => RegisterScreen(onRegisterSuccess: widget.onLoginSuccess, onGuest: widget.onGuest))),
+                            // Push (not replace): the AuthGate route stays alive
+                            // below so its pending rebuild never touches a
+                            // deactivated element (red-screen race). On success
+                            // we pop both Register + Login to reveal the gate,
+                            // which switches to MainScreen on its own.
+                            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => RegisterScreen(
+                                onRegisterSuccess: () {
+                                  var popped = 0;
+                                  Navigator.of(context).popUntil((_) => popped++ >= 2);
+                                },
+                                onGuest: widget.onGuest,
+                              ),
+                            )),
                             child: Text('Register', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700)),
                           ),
                         ],
@@ -124,7 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16),
               Center(
-                child: Text('Free for 2 years • 1000 heritage lovers', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12)),
+                child: Text('Free for 3 years • 1000 heritage lovers', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12)),
               ),
             ],
           ),

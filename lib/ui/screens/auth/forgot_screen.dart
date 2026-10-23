@@ -4,7 +4,6 @@ import 'package:rawang_melodies/ui/components/auth_background.dart';
 import 'package:rawang_melodies/ui/components/glass_auth.dart';
 import 'package:rawang_melodies/ui/components/support_contact.dart';
 import 'package:rawang_melodies/viewmodels/auth_view_model.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ForgotScreen extends StatefulWidget {
   const ForgotScreen({super.key});
@@ -32,9 +31,8 @@ class _ForgotScreenState extends State<ForgotScreen> {
     }
   }
 
-  Future<void> _contactAdmin() async {
-    final uri = Uri.parse('tel:+95900000000'); // TODO replace with real admin
-    if (await canLaunchUrl(uri)) await launchUrl(uri);
+  Future<void> _contactSupport() async {
+    await contactSupport();
   }
 
   @override
@@ -52,7 +50,7 @@ class _ForgotScreenState extends State<ForgotScreen> {
               const SizedBox(height: 12),
               const Text('Forgot password', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800)),
               const SizedBox(height: 6),
-              const Text('We will help you reset via admin', style: TextStyle(color: Colors.white70)),
+              const Text('We will help you reset via support', style: TextStyle(color: Colors.white70)),
               const SizedBox(height: 24),
               GlassCard(
                 child: Form(
@@ -64,7 +62,7 @@ class _ForgotScreenState extends State<ForgotScreen> {
                       const SizedBox(height: 12),
                       const Text('Enter your phone', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Colors.white)),
                       const SizedBox(height: 6),
-                      const Text('Admin will reset within 24h.\nIf you added email, we can send a link.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 13)),
+                      const Text('Support will reset within 24h.\nIf you added email, we can send a link.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 13)),
                       const SizedBox(height: 18),
                       TextFormField(
                         controller: _phoneCtrl,
@@ -94,9 +92,9 @@ class _ForgotScreenState extends State<ForgotScreen> {
                       ],
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
-                        onPressed: _contactAdmin,
+                        onPressed: _contactSupport,
                         icon: const Icon(Icons.support_agent),
-                        label: const Text('Contact Admin (09xxx)'),
+                        label: const Text('Contact support'),
                         style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), padding: const EdgeInsets.symmetric(vertical: 12)),
                       ),
                       const SizedBox(height: 8),

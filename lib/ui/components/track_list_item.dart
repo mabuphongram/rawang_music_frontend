@@ -1,5 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:rawang_melodies/data/local/entity/entities.dart';
+import 'package:rawang_melodies/data/remote/api_service.dart';
 
 class TrackListItem extends StatelessWidget {
   final TrackEntity track;
@@ -9,6 +11,9 @@ class TrackListItem extends StatelessWidget {
   final VoidCallback onToggleFavorite;
   final VoidCallback onAddToPlaylist;
   final VoidCallback onShare;
+  final String? albumCoverImage;
+  /// When false, the cover circle shows no play icon / playing indicator.
+  final bool showPlayOverlay;
 
   const TrackListItem({
     super.key,
@@ -19,6 +24,8 @@ class TrackListItem extends StatelessWidget {
     required this.onToggleFavorite,
     required this.onAddToPlaylist,
     required this.onShare,
+    this.albumCoverImage,
+    this.showPlayOverlay = true,
   });
 
   String _formatDuration(int seconds) {
@@ -30,11 +37,14 @@ class TrackListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final coverUrl = albumCoverImage != null && albumCoverImage!.isNotEmpty
+        ? ApiService.resolveMediaUrl(albumCoverImage!)
+        : '';
     
     return GestureDetector(
       onTap: onTrackClick,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: isPlayingCurrentTrack 
               ? theme.colorScheme.primaryContainer.withOpacity(0.4)
@@ -43,22 +53,44 @@ class TrackListItem extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isPlayingCurrentTrack 
-                    ? theme.colorScheme.primary 
-                    : theme.colorScheme.surfaceVariant,
-              ),
-              child: Icon(
-                Icons.play_arrow,
-                color: isPlayingCurrentTrack 
-                    ? theme.colorScheme.onPrimary 
-                    : theme.colorScheme.onSurfaceVariant,
-                size: 22,
-              ),
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: theme.colorScheme.surfaceVariant,
+                    image: coverUrl.isNotEmpty
+                        ? DecorationImage(
+                            image: CachedNetworkImageProvider(coverUrl),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                ),
+                if (showPlayOverlay) ...[
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withOpacity(
+                          isPlayingCurrentTrack ? 0.55 : 0.35),
+                    ),
+                  ),
+                  if (isPlayingCurrentTrack)
+                    const _PlayingBars(color: Colors.white)
+                  else
+                    const Icon(
+                      Icons.play_arrow,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                ] else if (isPlayingCurrentTrack)
+                  const _PlayingBars(color: Colors.white),
+              ],
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -173,6 +205,67 @@ class TrackListItem extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Animated equalizer bars shown in the cover circle of the track
+/// that is currently playing.
+class _PlayingBars extends StatefulWidget {
+  final Color color;
+  const _PlayingBars({required this.color});
+
+  @override
+  State<_PlayingBars> createState() => _PlayingBarsState();
+}
+
+class _PlayingBarsState extends State<_PlayingBars>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            _bar(_controller.value),
+            const SizedBox(width: 2.5),
+            _bar(1.0 - _controller.value),
+            const SizedBox(width: 2.5),
+            _bar((_controller.value + 0.5) % 1.0),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _bar(double t) {
+    return Container(
+      width: 3,
+      height: 5 + t * 11,
+      decoration: BoxDecoration(
+        color: widget.color,
+        borderRadius: BorderRadius.circular(1.5),
       ),
     );
   }
